@@ -1,73 +1,84 @@
-# Welcome to your Lovable project
+# Cakify – Frontend
+**From Oven to Order – A delightful web experience for a home-based bakery.**  
 
-## Project info
+This is the **frontend web application** for the Cakify project.  
+Customers can browse cakes, place orders, and send inquiries, while the admin manages products, orders, and customer inquiries through a secure dashboard.  
 
-**URL**: https://lovable.dev/projects/9136a7ad-9b90-4711-bbe9-aec3ba073be9
+---
 
-## How can I edit this code?
+## ✨ Features
 
-There are several ways of editing your application.
+### 🌐 Customer
+- Browse cakes by category (birthday, wedding, party, etc.)
+- View cake details (image, description, size, price)
+- Place orders with personal details
+- Send inquiries via a contact form
+- View featured cakes on the home page
 
-**Use Lovable**
+### 🔑 Admin
+- Secure login (owner only)
+- Dashboard overview with quick stats
+- Manage products (CRUD operations, categories, availability)
+- Manage orders (CRUD operations, update order status: Pending → Processing → Shipped → Completed)
+- Manage customer inquiries (reply, mark resolved, delete spam)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9136a7ad-9b90-4711-bbe9-aec3ba073be9) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠 Tech Stack
+- **React + TypeScript (Vite)**
+- **Tailwind CSS**
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 1. Clone the repo
+```bash
+git clone https://github.com/manula-Pehe/cakify-frontend.git
+```
+```bash
+cd cakify-frontend
+```
+### 2. Install dependencies
+```bash
+npm install
+```
+### 3. Start the development server
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+This will start the frontend on 👉 http://localhost:5173
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🌐 API Configuration
+The frontend expects a backend running at http://localhost:8080 by default.
+You can override this by creating a .env file at the root:
+```bash
+VITE_API_BASE_URL=http://localhost:8080
+```
 
-**Use GitHub Codespaces**
+## 👥 Collaboration Workflow
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **Feature branches for development**  
+  Each team member works on a branch per feature. Example branch names:
+  - `feat/products-crud`
+  - `feat/orders-crud`
+  - `feat/inquiries-module`
+  - `fix/navbar-responsive`
 
-## What technologies are used for this project?
+- **Pull Requests (PRs) to `main`**  
+  - Push your branch and open a PR.  
+  - Request at least one review.  
+  - Merge only after approval.  
 
-This project is built with:
+- **Protected `main` branch**  
+  - Direct pushes to `main` are disabled.  
+  - All changes must go through the PR + review process.  
+  - Keeps `main` always in a working state for demos.  
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📌 Project Team
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/9136a7ad-9b90-4711-bbe9-aec3ba073be9) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- **IT24100315** – Ashen Bandara  
+- **IT24100487** – M.K.M. Pehesara  
+- **IT24101492** – R.M.A. Priyashan  
+- **IT24101512** – E.J.M.S. De Silva  
