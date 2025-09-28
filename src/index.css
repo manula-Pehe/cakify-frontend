@@ -5,3 +5,171 @@
 @tailwind utilities;
 
 /* Cake Business Design System CSS Overides part we need*/
+
+@layer base {
+  :root {
+    /* Cake Business Color Palette */
+    --background: 43 100% 94%; /* Cream */
+    --foreground: 0 0% 18%; /* Dark Gray */
+
+    --card: 0 0% 100%; /* Pure White */
+    --card-foreground: 0 0% 18%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 18%;
+
+    --primary: 350 55% 88%; /* Light Pink */
+    --primary-foreground: 0 0% 18%;
+
+    --secondary: 30 47% 29%; /* Chocolate Brown */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 43 50% 90%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 350 40% 95%;
+    --accent-foreground: 30 47% 29%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 350 30% 85%;
+    --input: 0 0% 100%;
+    --ring: 350 55% 70%;
+
+    --radius: 1rem;
+
+    /* Custom Cake Business Tokens */
+    --cake-pink: 350 55% 88%;
+    --cake-cream: 43 100% 94%;
+    --cake-brown: 30 47% 29%;
+    --cake-dark: 0 0% 18%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--cake-pink)), hsl(var(--cake-cream)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--cake-brown)), hsl(30 60% 35%));
+    --gradient-hero: linear-gradient(135deg, hsl(350 60% 85%), hsl(43 80% 90%));
+    
+    /* Shadows */
+    --shadow-soft: 0 4px 20px hsl(var(--cake-pink) / 0.15);
+    --shadow-card: 0 8px 30px hsl(var(--cake-brown) / 0.1);
+    --shadow-elegant: 0 10px 40px hsl(var(--cake-pink) / 0.2);
+    
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 1rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-poppins;
+  }
+}
+
+@layer components {
+  /* Cake Business Component Classes */
+  .cake-card {
+    @apply bg-card border border-border/20 rounded-2xl p-6 
+           transition-all duration-300 hover:shadow-[var(--shadow-elegant)] 
+           hover:-translate-y-1;
+  }
+  
+  .hero-gradient {
+    background: var(--gradient-hero);
+  }
+  
+  .primary-gradient {
+    background: var(--gradient-primary);
+  }
+  
+  .secondary-gradient {
+    background: var(--gradient-secondary);
+  }
+  
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 
+           rounded-2xl shadow-[var(--shadow-card)];
+  }
+  
+  .admin-sidebar {
+    @apply bg-secondary text-secondary-foreground shadow-[var(--shadow-card)];
+  }
+  
+  .status-badge {
+    @apply px-3 py-1 rounded-full text-sm font-medium;
+  }
+  
+  .btn-cake {
+    @apply bg-primary hover:bg-primary/90 text-primary-foreground 
+           px-6 py-3 rounded-xl font-medium 
+           transition-all duration-300 hover:shadow-[var(--shadow-soft)]
+           hover:-translate-y-0.5;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary hover:bg-secondary/90 text-secondary-foreground 
+           px-6 py-3 rounded-xl font-medium 
+           transition-all duration-300 hover:shadow-[var(--shadow-soft)];
+  }
+}
