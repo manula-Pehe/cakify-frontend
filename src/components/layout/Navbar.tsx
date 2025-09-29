@@ -26,7 +26,7 @@ const Navbar = () => {
               <Cake className="h-6 w-6 text-primary-foreground" />
             </div>
             <span className="font-bold text-xl text-foreground font-poppins">
-              Sweet Delights
+              Cakify
             </span>
           </Link>
 
