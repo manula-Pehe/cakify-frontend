@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // Layouts
 import CustomerLayout from "./layouts/CustomerLayout";
+import AdminLayout from "./layouts/AdminLayout";
 
 // Customer Pages
 import Home from "./pages/customer/Home";
@@ -14,6 +15,9 @@ import CakeDetails from "./pages/customer/CakeDetails";
 import OrderForm from "./pages/customer/OrderForm";
 import Contact from "./pages/customer/Contact";
 import About from "./pages/customer/About";
+
+// Admin Pages
+import AdminProducts from "./pages/admin/Products";
 
 
 import NotFound from "./pages/NotFound";
@@ -35,6 +39,11 @@ const App = () => (
             <Route path="order" element={<OrderForm />} />
             <Route path="contact" element={<Contact />} />
             <Route path="about" element={<About />} />
+          </Route>
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="products" element={<AdminProducts />} />
           </Route>
 
           {/* Catch-all route */}
