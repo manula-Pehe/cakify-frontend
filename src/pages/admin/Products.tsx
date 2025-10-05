@@ -115,8 +115,8 @@ const AdminProducts = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Product Management</h1>
-          <p className="text-white/80">Manage your cake catalog and inventory</p>
+          <h1 className="text-3xl font-bold text-grey mb-2">Product Management</h1>
+          <p className="text-black/80">Manage your cake catalog and inventory</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -228,11 +228,11 @@ const AdminProducts = () => {
       {/* Products List */}
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className="text-black flex items-center gap-2">
             <Package className="h-5 w-5" />
             All Products ({products.length})
           </CardTitle>
-          <CardDescription className="text-white/70">
+          <CardDescription className="text-black/70">
             Manage your cake inventory and pricing
           </CardDescription>
         </CardHeader>
@@ -240,7 +240,7 @@ const AdminProducts = () => {
           {products.length > 0 ? (
             <div className="space-y-4">
               {products.map((product) => (
-                <div key={product.id} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                <div key={product.id} className="flex items-center gap-4 p-4 bg-black/5 rounded-xl">
                   <img
                     src={product.image}
                     alt={product.name}
@@ -249,7 +249,7 @@ const AdminProducts = () => {
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-white">{product.name}</h3>
+                      <h3 className="font-semibold text-black">{product.name}</h3>
                       <Badge variant="outline" className="text-xs">
                         {product.category}
                       </Badge>
@@ -259,12 +259,12 @@ const AdminProducts = () => {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-white/70 line-clamp-2">
+                    <p className="text-sm text-black/70 line-clamp-2">
                       {product.description}
                     </p>
                     <div className="flex items-center gap-4 mt-2">
-                      <span className="font-semibold text-white">${product.price}</span>
-                      <span className="text-xs text-white/60">
+                      <span className="font-semibold text-black">${product.price}</span>
+                      <span className="text-xs text-black/60">
                         Sizes: {product.sizes.join(", ")}
                       </span>
                     </div>
@@ -276,7 +276,7 @@ const AdminProducts = () => {
                       checked={product.availability}
                       onCheckedChange={() => toggleAvailability(product.id)}
                     />
-                      <span className="text-xs text-white/70">
+                      <span className="text-xs text-black/70">
                         {product.availability ? "Available" : "Unavailable"}
                       </span>
                     </div>
@@ -286,7 +286,7 @@ const AdminProducts = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-white/70 hover:text-white"
+                      className="text-black/70 hover:text-white"
                       onClick={() => handleEdit(product)}
                     >
                       <Edit className="h-4 w-4" />
@@ -294,7 +294,7 @@ const AdminProducts = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-white/70 hover:text-red-400"
+                      className="text-black/70 hover:text-red-400"
                       onClick={() => handleDelete(product.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -306,7 +306,7 @@ const AdminProducts = () => {
           ) : (
             <div className="text-center py-12">
               <Package className="h-12 w-12 text-white/50 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">No products yet</h3>
+              <h3 className="text-xl font-semibold text-black mb-2">No products yet</h3>
               <p className="text-white/70 mb-4">
                 Add your first cake to get started with your catalog.
               </p>
