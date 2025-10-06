@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,14 +8,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { cakes, Cake } from "@/data/mockData";
-import { Plus, Edit, Trash2, Eye, Package } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { productService, Product } from "@/services/productService";
 
 const AdminProducts = () => {
   const { toast } = useToast();
-  const [products, setProducts] = useState<Cake[]>(cakes);
-  const [editingProduct, setEditingProduct] = useState<Cake | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -26,6 +28,27 @@ const AdminProducts = () => {
     availability: true,
     featured: false,
   });
+
+  // Fetch products on component mount
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setIsLoading(true);
+      const data = await productService.getAll();
+      setProducts(data);
+    } catch (error) {
+      toast({
+        title: "Error Loading Products",
+        description: error instanceof Error ? error.message : "Failed to load products",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -40,7 +63,7 @@ const AdminProducts = () => {
     setEditingProduct(null);
   };
 
-  const handleEdit = (product: Cake) => {
+  const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -54,7 +77,7 @@ const AdminProducts = () => {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name || !formData.description || !formData.price) {
       toast({
         title: "Missing Information",
@@ -64,8 +87,7 @@ const AdminProducts = () => {
       return;
     }
 
-    const updatedProduct: Cake = {
-      id: editingProduct?.id || `new-${Date.now()}`,
+    const productData = {
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
@@ -73,50 +95,98 @@ const AdminProducts = () => {
       sizes: formData.sizes,
       availability: formData.availability,
       featured: formData.featured,
-      image: editingProduct?.image || "/api/placeholder/400/400",
+      imageUrl: editingProduct?.image || "/api/placeholder/400/400",
     };
 
-    if (editingProduct) {
-      setProducts(products.map(p => p.id === editingProduct.id ? updatedProduct : p));
-      toast({
-        title: "Product Updated",
-        description: "Product has been successfully updated.",
-      });
-    } else {
-      setProducts([...products, updatedProduct]);
-      toast({
-        title: "Product Added",
-        description: "New product has been added to the catalog.",
-      });
-    }
+    try {
+      setIsSaving(true);
+      
+      if (editingProduct) {
+        // Update existing product
+        await productService.update(editingProduct.id, productData);
+        toast({
+          title: "Product Updated",
+          description: "Product has been successfully updated.",
+        });
+      } else {
+        // Create new product
+        await productService.create(productData);
+        toast({
+          title: "Product Added",
+          description: "New product has been added to the catalog.",
+        });
+      }
 
-    setIsDialogOpen(false);
-    resetForm();
+      // Reload products from server
+      await loadProducts();
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      toast({
+        title: "Error Saving Product",
+        description: error instanceof Error ? error.message : "Failed to save product",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDelete = (productId: string) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts(products.filter(p => p.id !== productId));
+  const handleDelete = async (productId: string) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) {
+      return;
+    }
+
+    try {
+      await productService.delete(productId);
       toast({
         title: "Product Deleted",
         description: "Product has been removed from the catalog.",
       });
+      // Reload products from server
+      await loadProducts();
+    } catch (error) {
+      toast({
+        title: "Error Deleting Product",
+        description: error instanceof Error ? error.message : "Failed to delete product",
+        variant: "destructive",
+      });
     }
   };
 
-  const toggleAvailability = (productId: string) => {
-    setProducts(products.map(p => 
-      p.id === productId ? { ...p, availability: !p.availability } : p
-    ));
+  const toggleAvailability = async (productId: string) => {
+    try {
+      await productService.toggleAvailability(productId);
+      // Reload products from server
+      await loadProducts();
+      toast({
+        title: "Availability Updated",
+        description: "Product availability has been toggled.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error Updating Availability",
+        description: error instanceof Error ? error.message : "Failed to update availability",
+        variant: "destructive",
+      });
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-grey mb-2">Product Management</h1>
-          <p className="text-black/80">Manage your cake catalog and inventory</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Product Management</h1>
+          <p className="text-gray-700">Manage your cake catalog and inventory</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -214,10 +284,11 @@ const AdminProducts = () => {
             </div>
             
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>
                 Cancel
               </Button>
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editingProduct ? "Update Cake" : "Add Cake"}
               </Button>
             </DialogFooter>
@@ -228,11 +299,11 @@ const AdminProducts = () => {
       {/* Products List */}
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="text-black flex items-center gap-2">
+          <CardTitle className="text-gray-900 flex items-center gap-2">
             <Package className="h-5 w-5" />
             All Products ({products.length})
           </CardTitle>
-          <CardDescription className="text-black/70">
+          <CardDescription className="text-gray-600">
             Manage your cake inventory and pricing
           </CardDescription>
         </CardHeader>
@@ -240,7 +311,7 @@ const AdminProducts = () => {
           {products.length > 0 ? (
             <div className="space-y-4">
               {products.map((product) => (
-                <div key={product.id} className="flex items-center gap-4 p-4 bg-black/5 rounded-xl">
+                <div key={product.id} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
                   <img
                     src={product.image}
                     alt={product.name}
@@ -249,22 +320,22 @@ const AdminProducts = () => {
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-black">{product.name}</h3>
+                      <h3 className="font-semibold text-gray-900">{product.name}</h3>
                       <Badge variant="outline" className="text-xs">
                         {product.category}
                       </Badge>
                       {product.featured && (
-                        <Badge className="bg-yellow-500 text-white text-xs">
+                        <Badge className="bg-yellow-100 text-yellow-800 text-xs">
                           Featured
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-black/70 line-clamp-2">
+                    <p className="text-sm text-gray-600 line-clamp-2">
                       {product.description}
                     </p>
                     <div className="flex items-center gap-4 mt-2">
-                      <span className="font-semibold text-black">${product.price}</span>
-                      <span className="text-xs text-black/60">
+                      <span className="font-semibold text-orange-600">LKR {product.price.toLocaleString()}</span>
+                      <span className="text-xs text-gray-600">
                         Sizes: {product.sizes.join(", ")}
                       </span>
                     </div>
@@ -272,11 +343,11 @@ const AdminProducts = () => {
                   
                   <div className="flex items-center gap-2">
                     <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={product.availability}
-                      onCheckedChange={() => toggleAvailability(product.id)}
-                    />
-                      <span className="text-xs text-black/70">
+                      <Switch
+                        checked={product.availability}
+                        onCheckedChange={() => toggleAvailability(product.id)}
+                      />
+                      <span className="text-xs text-gray-700">
                         {product.availability ? "Available" : "Unavailable"}
                       </span>
                     </div>
@@ -286,7 +357,7 @@ const AdminProducts = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-black/70 hover:text-white"
+                      className="text-gray-700 hover:text-gray-900"
                       onClick={() => handleEdit(product)}
                     >
                       <Edit className="h-4 w-4" />
@@ -294,7 +365,7 @@ const AdminProducts = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-black/70 hover:text-red-400"
+                      className="text-gray-700 hover:text-red-600"
                       onClick={() => handleDelete(product.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -305,9 +376,9 @@ const AdminProducts = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <Package className="h-12 w-12 text-white/50 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-black mb-2">No products yet</h3>
-              <p className="text-white/70 mb-4">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No products yet</h3>
+              <p className="text-gray-600 mb-4">
                 Add your first cake to get started with your catalog.
               </p>
               <Button 
