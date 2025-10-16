@@ -8,9 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Package, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Loader2, MessageSquare, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { productService, Product } from "@/services/productService";
+import { categoryService, Category } from "@/services/categoryService";
+import { Link } from "react-router-dom";
+import { reviewService, Review, ReviewStats } from "@/services/reviewService";
 
 const AdminProducts = () => {
   const { toast } = useToast();
@@ -23,15 +26,23 @@ const AdminProducts = () => {
     name: "",
     description: "",
     price: "",
-    category: "",
+    categoryId: null as number | null,
     sizes: [] as string[],
     availability: true,
     featured: false,
   });
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isReviewsOpen, setIsReviewsOpen] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
+  const [selectedProductForReviews, setSelectedProductForReviews] = useState<Product | null>(null);
+  const [deletingReviewId, setDeletingReviewId] = useState<number | null>(null);
 
   // Fetch products on component mount
   useEffect(() => {
     loadProducts();
+    loadCategories();
   }, []);
 
   const loadProducts = async () => {
@@ -50,12 +61,70 @@ const AdminProducts = () => {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const data = await categoryService.getAll();
+      setCategories(data);
+    } catch (error) {
+      toast({
+        title: "Error Loading Categories",
+        description: error instanceof Error ? error.message : "Failed to load categories",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openReviews = async (product: Product) => {
+    setSelectedProductForReviews(product);
+    setIsReviewsOpen(true);
+    await loadReviews(product.id);
+  };
+
+  const loadReviews = async (productId: string) => {
+    try {
+      setReviewsLoading(true);
+      const [list, stats] = await Promise.all([
+        reviewService.getByProduct(productId),
+        reviewService.getStats(productId),
+      ]);
+      setReviews(list);
+      setReviewStats(stats);
+    } catch (error) {
+      toast({
+        title: "Error Loading Reviews",
+        description: error instanceof Error ? error.message : "Failed to load reviews",
+        variant: "destructive",
+      });
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: number) => {
+    if (!selectedProductForReviews) return;
+    if (!window.confirm("Delete this review? This action cannot be undone.")) return;
+    try {
+      setDeletingReviewId(reviewId);
+      await reviewService.delete(selectedProductForReviews.id, reviewId);
+      toast({ title: "Review Deleted" });
+      await loadReviews(selectedProductForReviews.id);
+    } catch (error) {
+      toast({
+        title: "Error Deleting Review",
+        description: error instanceof Error ? error.message : "Failed to delete review",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingReviewId(null);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       name: "",
       description: "",
       price: "",
-      category: "",
+      categoryId: null,
       sizes: [],
       availability: true,
       featured: false,
@@ -69,7 +138,7 @@ const AdminProducts = () => {
       name: product.name,
       description: product.description,
       price: product.price.toString(),
-      category: product.category,
+      categoryId: (product as any).categoryId ?? null,
       sizes: product.sizes,
       availability: product.availability,
       featured: product.featured,
@@ -91,7 +160,7 @@ const AdminProducts = () => {
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
-      category: formData.category,
+      categoryId: formData.categoryId,
       sizes: formData.sizes,
       availability: formData.availability,
       featured: formData.featured,
@@ -188,7 +257,13 @@ const AdminProducts = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Product Management</h1>
           <p className="text-gray-700">Manage your cake catalog and inventory</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <div className="flex items-center gap-2">
+          <Link to="/admin/categories">
+            <Button className="bg-red-500 text-white hover:bg-red-500/90">
+              Categories
+            </Button>
+          </Link>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
               className="bg-white text-secondary hover:bg-white/90"
@@ -248,15 +323,19 @@ const AdminProducts = () => {
                 
                 <div className="grid gap-2">
                   <Label htmlFor="category">Category</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                  <Select 
+                    value={formData.categoryId !== null ? String(formData.categoryId) : undefined}
+                    onValueChange={(value) => setFormData({ ...formData, categoryId: parseInt(value) })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Birthday">Birthday</SelectItem>
-                      <SelectItem value="Wedding">Wedding</SelectItem>
-                      <SelectItem value="Party">Party</SelectItem>
-                      <SelectItem value="Custom">Custom</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={String(cat.id)}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -293,7 +372,8 @@ const AdminProducts = () => {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Products List */}
@@ -358,6 +438,15 @@ const AdminProducts = () => {
                       variant="ghost"
                       size="sm"
                       className="text-gray-700 hover:text-gray-900"
+                      onClick={() => openReviews(product)}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      Reviews
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-700 hover:text-gray-900"
                       onClick={() => handleEdit(product)}
                     >
                       <Edit className="h-4 w-4" />
@@ -392,6 +481,83 @@ const AdminProducts = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Reviews Dialog */}
+      <Dialog open={isReviewsOpen} onOpenChange={setIsReviewsOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              {selectedProductForReviews ? `Reviews - ${selectedProductForReviews.name}` : 'Reviews'}
+            </DialogTitle>
+            <DialogDescription>
+              View and manage customer reviews for this product.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Stats */}
+          <div className="flex items-center gap-4 mb-2">
+            {reviewStats ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-yellow-500" />
+                  <span className="font-medium">{reviewStats.averageRating?.toFixed(1) ?? '0.0'}</span>
+                </div>
+                <div className="text-sm text-gray-600">{reviewStats.reviewCount} review{reviewStats.reviewCount !== 1 ? 's' : ''}</div>
+              </>
+            ) : (
+              <div className="text-sm text-gray-600">No stats</div>
+            )}
+          </div>
+
+          {/* Reviews List */}
+          <div className="max-h-[50vh] overflow-auto space-y-3">
+            {reviewsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+              </div>
+            ) : reviews.length > 0 ? (
+              reviews.map((rev) => (
+                <div key={rev.id} className="p-4 bg-white/5 rounded-xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-yellow-600">
+                        {Array.from({ length: 5 }).map((_, idx) => (
+                          <Star key={idx} className={`h-4 w-4 ${idx < rev.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                        ))}
+                      </div>
+                      <span className="text-sm text-gray-700">{rev.email}</span>
+                      <span className="text-xs text-gray-500">{new Date(rev.createdAt).toLocaleString()}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-700 hover:text-red-600"
+                      onClick={() => handleDeleteReview(rev.id)}
+                      disabled={deletingReviewId === rev.id}
+                    >
+                      {deletingReviewId === rev.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap">
+                    {rev.comment}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-sm text-gray-600 py-8 text-center">No reviews yet for this product.</div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsReviewsOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
