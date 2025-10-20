@@ -93,9 +93,17 @@ const AdminCategories = () => {
       toast({ title: "Category Deleted" });
       await loadCategories();
     } catch (error) {
+      // Check if it's a foreign key constraint error
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete category";
+      const isForeignKeyError = errorMessage.includes("foreign key") || 
+                                 errorMessage.includes("constraint") || 
+                                 errorMessage.includes("referenced");
+      
       toast({
-        title: "Error Deleting Category",
-        description: error instanceof Error ? error.message : "Failed to delete category",
+        title: "Cannot Delete Category",
+        description: isForeignKeyError 
+          ? "This category is being used by one or more products. Please reassign or delete those products first."
+          : errorMessage,
         variant: "destructive",
       });
     }
@@ -152,12 +160,16 @@ const AdminCategories = () => {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Category</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete "{cat.name}"? This action cannot be undone.
+                            Are you sure you want to delete "{cat.name}"? 
+                            <br /><br />
+                            <strong>Note:</strong> If this category is being used by any products, you'll need to reassign or delete those products first.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(cat.id)}>Delete</AlertDialogAction>
+                          <AlertDialogAction onClick={() => handleDelete(cat.id)} className="bg-red-600 hover:bg-red-700">
+                            Delete
+                          </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
