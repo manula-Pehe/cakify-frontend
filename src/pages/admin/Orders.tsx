@@ -96,7 +96,7 @@ const AdminOrders = () => {
         order.customerName?.toLowerCase().includes(searchTerm) ||
         order.customerEmail?.toLowerCase().includes(searchTerm) ||
         order.customerPhone?.toLowerCase().includes(searchTerm) ||
-        order.id?.toString().includes(searchTerm) ||
+        order.orderId?.toString().includes(searchTerm) ||
         order.orderItems?.some(item => 
           item.productName?.toLowerCase().includes(searchTerm)
         )
@@ -118,11 +118,11 @@ const AdminOrders = () => {
       
       // Optimistic update
       const updatedOrders = orderList.map(order => 
-        order.id === orderId ? { ...order, status: newStatus } : order
+        order.orderId === orderId ? { ...order, status: newStatus } : order
       );
       setOrderList(updatedOrders);
       
-      // Make API call - backend expects PUT /orders/{id}/status with { "status": "NEW_STATUS" }
+      // Make API call - backend expects PUT /orders/{orderId}/status with { "status": "NEW_STATUS" }
       await orderService.updateStatus(orderId, newStatus);
       
       console.log('✅ Order status updated successfully');
@@ -273,7 +273,7 @@ const AdminOrders = () => {
               Orders ({filteredOrders.length} of {totalOrders})
             </CardTitle>
             <div className="text-gray-700 text-sm">
-              Total Revenue: LKR {orderList.reduce((sum, order) => sum + (order.totalAmount || 0), 0).toLocaleString()}
+              Total Revenue: LKR {orderList.reduce((sum, order) => sum + (Number(order.totalAmount) || 0), 0).toLocaleString()}
             </div>
           </div>
           <CardDescription className="text-gray-600">
@@ -285,7 +285,7 @@ const AdminOrders = () => {
             <>
               <div className="space-y-4">
                 {filteredOrders.map((order) => (
-                  <div key={order.id} className="p-6 bg-white/5 rounded-xl border border-white/10 hover:border-white/20 transition-all">
+                  <div key={order.orderId} className="p-6 bg-white/5 rounded-xl border border-white/10 hover:border-white/20 transition-all">
                     <div className="grid lg:grid-cols-12 gap-4 items-start">
                       {/* Order Info */}
                       <div className="lg:col-span-4">
@@ -294,7 +294,7 @@ const AdminOrders = () => {
                             <h3 className="font-semibold text-gray-900 text-lg">
                               {order.customerName || 'Unknown Customer'}
                             </h3>
-                            <p className="text-sm text-gray-600">Order #{order.id}</p>
+                            <p className="text-sm text-gray-600">Order #{order.orderId}</p>
                           </div>
                           <Badge className={`status-badge ${statusColors[order.status]}`}>
                             {order.status.replace('_', ' ')}
@@ -378,7 +378,7 @@ const AdminOrders = () => {
                         <div className="space-y-2">
                           <Select 
                             value={order.status} 
-                            onValueChange={(value) => order.id && updateOrderStatus(order.id, value as Order['status'])}
+                            onValueChange={(value) => order.orderId && updateOrderStatus(order.orderId, value as Order['status'])}
                           >
                             <SelectTrigger className="bg-white/10 border-white/20 text-gray-900">
                               <SelectValue />
