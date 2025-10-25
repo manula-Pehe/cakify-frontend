@@ -1,19 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CakeCard from "@/components/cake/CakeCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cakes } from "@/data/mockData";
 import { Filter } from "lucide-react";
+import { categoryService, Category } from "@/services/categoryService";
+import { useToast } from "@/hooks/use-toast";
 
 const Cakes = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const { toast } = useToast();
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  const categories = ["All", ...Array.from(new Set(cakes.map(cake => cake.category)))];
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
-  const filteredCakes = selectedCategory === "All" 
-    ? cakes 
-    : cakes.filter(cake => cake.category === selectedCategory);
+  const loadCategories = async () => {
+    try {
+      const data = await categoryService.getAll();
+      setCategories(data);
+    } catch (error) {
+      toast({
+        title: "Error Loading Categories",
+        description: error instanceof Error ? error.message : "Failed to load categories",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredCakes = selectedCategory === null
+    ? cakes
+    : cakes.filter((cake: any) => cake.categoryId === selectedCategory);
 
   return (
     <div className="min-h-screen bg-background py-8">
@@ -46,18 +65,29 @@ const Cakes = () => {
           </div>
           
           <div className={`flex flex-wrap gap-2 ${showFilters ? 'block' : 'hidden md:flex'}`}>
+            <Badge
+              variant={selectedCategory === null ? "default" : "outline"}
+              className={`cursor-pointer px-4 py-2 text-sm ${
+                selectedCategory === null 
+                  ? "bg-secondary text-white hover:bg-secondary/90" 
+                  : "hover:bg-accent"
+              }`}
+              onClick={() => setSelectedCategory(null)}
+            >
+              All
+            </Badge>
             {categories.map((category) => (
               <Badge
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
+                key={category.id}
+                variant={selectedCategory === category.id ? "default" : "outline"}
                 className={`cursor-pointer px-4 py-2 text-sm ${
-                  selectedCategory === category 
+                  selectedCategory === category.id 
                     ? "bg-secondary text-white hover:bg-secondary/90" 
                     : "hover:bg-accent"
                 }`}
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => setSelectedCategory(category.id)}
               >
-                {category}
+                {category.name}
               </Badge>
             ))}
           </div>
@@ -67,7 +97,6 @@ const Cakes = () => {
         <div className="mb-6">
           <p className="text-muted-foreground">
             Showing {filteredCakes.length} cake{filteredCakes.length !== 1 ? 's' : ''}
-            {selectedCategory !== "All" && ` in "${selectedCategory}"`}
           </p>
         </div>
 
@@ -89,7 +118,7 @@ const Cakes = () => {
               </p>
               <Button 
                 variant="cake" 
-                onClick={() => setSelectedCategory("All")}
+                onClick={() => setSelectedCategory(null)}
               >
                 View All Cakes
               </Button>

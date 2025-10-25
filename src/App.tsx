@@ -18,6 +18,7 @@ import About from "./pages/customer/About";
 
 // Admin Pages
 import AdminProducts from "./pages/admin/Products";
+import AdminCategories from "./pages/admin/Categories";
 
 
 import NotFound from "./pages/NotFound";
@@ -44,6 +45,7 @@ const App = () => (
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="products" element={<AdminProducts />} />
+            <Route path="categories" element={<AdminCategories />} />
           </Route>
 
           {/* Catch-all route */}

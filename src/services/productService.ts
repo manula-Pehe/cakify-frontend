@@ -7,7 +7,9 @@ export interface Product {
   description: string;
   price: number;
   image: string;
-  category: string;
+  category: string; // Display name (may be deprecated in favor of categoryName)
+  categoryId?: number; // Backend ID for category
+  categoryName?: string; // Optional explicit name if provided by backend
   sizes: string[];
   availability: boolean;
   featured: boolean;
@@ -18,7 +20,7 @@ export interface ProductRequest {
   name: string;
   description: string;
   price: number;
-  category: string;
+  categoryId: number | null;
   sizes: string[];
   availability: boolean;
   featured: boolean;
