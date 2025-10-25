@@ -17,9 +17,13 @@ import Contact from "./pages/customer/Contact";
 import About from "./pages/customer/About";
 
 // Admin Pages
+import AdminLogin from "./pages/admin/Login";
+import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/Products";
+import AdminOrders from "./pages/admin/Orders";
+import AdminInquiries from "./pages/admin/Inquiries";
+import AdminAnalytics from "./pages/admin/Analytics";
 import AdminCategories from "./pages/admin/Categories";
-
 
 import NotFound from "./pages/NotFound";
 
@@ -43,9 +47,14 @@ const App = () => (
           </Route>
 
           {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
             <Route path="products" element={<AdminProducts />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="inquiries" element={<AdminInquiries />} />
             <Route path="categories" element={<AdminCategories />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
           </Route>
 
           {/* Catch-all route */}
