@@ -23,6 +23,7 @@ import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
 import AdminInquiries from "./pages/admin/Inquiries";
 import AdminAnalytics from "./pages/admin/Analytics";
+import AdminCategories from "./pages/admin/Categories";
 
 import NotFound from "./pages/NotFound";
 
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="products" element={<AdminProducts />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="inquiries" element={<AdminInquiries />} />
+            <Route path="categories" element={<AdminCategories />} />
             <Route path="analytics" element={<AdminAnalytics />} />
           </Route>
 
