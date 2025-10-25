@@ -1,287 +1,177 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import StatsCard from "@/components/admin/StatsCard";
-import { analytics } from "@/data/mockData";
-import { 
-  BarChart3, 
-  TrendingUp, 
-  DollarSign, 
-  ShoppingBag, 
-  Calendar,
-  Users,
-  Target,
-  Award
-} from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import React, { useEffect, useState } from "react";
+import { apiClient } from "@/services/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, BarChart3, TrendingUp, Users, Package } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
-const AdminAnalytics = () => {
-  const totalRevenue = analytics.monthlyRevenue.reduce((sum, month) => sum + month.revenue, 0);
-  const avgMonthlyRevenue = totalRevenue / analytics.monthlyRevenue.length;
-  const bestMonth = analytics.monthlyRevenue.reduce((max, month) => month.revenue > max.revenue ? month : max);
-  const totalOrders = analytics.popularCakes.reduce((sum, cake) => sum + cake.orders, 0);
+// Types for analytics data from backend
+interface AnalyticsData {
+  totalUsers: number;
+  totalOrders: number;
+  totalRevenue: number;
+  topSellingProducts: {
+    productName: string;
+    totalQuantity: number;
+    totalRevenue: number;
+  }[];
+  monthlySales: {
+    month: string;
+    totalRevenue: number;
+  }[];
+}
+
+const Analytics: React.FC = () => {
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // ✅ Fetch analytics from backend
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get<AnalyticsData>("/analytics");
+        // apiClient already returns `data`, not the full AxiosResponse
+        setAnalytics(response);
+      } catch (err: any) {
+        setError(err.message || "Failed to load analytics data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalytics();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-[70vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-600 mt-10 font-semibold">
+        {error}
+      </div>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <div className="text-center text-gray-600 mt-10">
+        No analytics data available.
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-black mb-2">Analytics & Reports</h1>
-        <p className="text-black/80">Insights into your cake business performance</p>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard
-          title="Total Revenue"
-          value={`${totalRevenue.toLocaleString()}`}
-          icon={DollarSign}
-          description="Last 6 months"
-          trend={{ value: 18, isPositive: true }}
-        />
-        <StatsCard
-          title="Average Monthly"
-          value={`${Math.round(avgMonthlyRevenue).toLocaleString()}`}
-          icon={TrendingUp}
-          description="Monthly average"
-          trend={{ value: 5, isPositive: true }}
-        />
-        <StatsCard
-          title="Total Orders"
-          value={totalOrders}
-          icon={ShoppingBag}
-          description="Cake orders served"
-          trend={{ value: 22, isPositive: true }}
-        />
-        <StatsCard
-          title="Best Month"
-          value={bestMonth.month}
-          icon={Award}
-          description={`${bestMonth.revenue.toLocaleString()} revenue`}
-        />
-      </div>
-
-      {/* Charts */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Revenue Trend */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-black flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Monthly Revenue Trend
-            </CardTitle>
-            <CardDescription className="text-black/70">
-              Revenue performance over the last 6 months
-            </CardDescription>
+    <div className="p-6 space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.monthlyRevenue}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke="rgba(255,255,255,0.7)"
-                    fontSize={12}
-                  />
-                  <YAxis 
-                    stroke="rgba(255,255,255,0.7)"
-                    fontSize={12}
-                    tickFormatter={(value) => `${value}`}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255,255,255,0.9)', 
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#2E2E2E'
-                    }}
-                    formatter={(value) => [`${value}`, 'Revenue']}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#F7C5CC" 
-                    strokeWidth={3}
-                    dot={{ fill: '#F7C5CC', strokeWidth: 2, r: 6 }}
-                    activeDot={{ r: 8, stroke: '#6B4226', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <div className="text-2xl font-bold">{analytics.totalUsers}</div>
           </CardContent>
         </Card>
 
-        {/* Popular Cakes */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-black flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Popular Cakes
-            </CardTitle>
-            <CardDescription className="text-black/70">
-              Most ordered cake types
-            </CardDescription>
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.popularCakes}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke="rgba(255,255,255,0.7)"
-                    fontSize={11}
-                    interval={0}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                  />
-                  <YAxis 
-                    stroke="rgba(255,255,255,0.7)"
-                    fontSize={12}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255,255,255,0.9)', 
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#2E2E2E'
-                    }}
-                    formatter={(value) => [`${value}`, 'Orders']}
-                  />
-                  <Bar 
-                    dataKey="orders" 
-                    fill="#F7C5CC"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="text-2xl font-bold">{analytics.totalOrders}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ₹{analytics.totalRevenue.toLocaleString()}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Growth</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+12%</div>
+            <p className="text-xs text-muted-foreground">vs last month</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Detailed Analytics */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Customer Insights */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-black flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Customer Insights
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">New Customers</span>
-              <span className="font-semibold text-black">24</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">Returning Customers</span>
-              <span className="font-semibold text-black">18</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">Customer Retention</span>
-              <span className="font-semibold text-black">75%</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">Avg. Order Value</span>
-              <span className="font-semibold text-black">$42</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Order Statistics */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-black flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5" />
-              Order Statistics
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">Orders This Week</span>
-              <span className="font-semibold text-black">12</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">Orders This Month</span>
-              <span className="font-semibold text-black">48</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">Pending Orders</span>
-              <span className="font-semibold text-black">8</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">Completion Rate</span>
-              <span className="font-semibold text-black">95%</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Performance Metrics */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-black flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Performance Metrics
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">Avg. Prep Time</span>
-              <span className="font-semibold text-black">2.3 days</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">On-Time Delivery</span>
-              <span className="font-semibold text-black">98%</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">Customer Rating</span>
-              <span className="font-semibold text-black">4.9/5</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-black/70">Repeat Orders</span>
-              <span className="font-semibold text-black">42%</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Growth Projections */}
-      <Card className="glass-card">
+      {/* Monthly Revenue Bar Chart */}
+      <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle className="text-black flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Growth Projections & Goals
-          </CardTitle>
-          <CardDescription className="text-black/70">
-            Based on current trends and historical data
-          </CardDescription>
+          <CardTitle>Monthly Revenue Overview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="text-center p-4 bg-black/5 rounded-xl">
-              <div className="text-2xl font-bold text-black mb-1">$7,500</div>
-              <div className="text-sm text-black/70">Projected Next Month</div>
-              <div className="text-xs text-green-400 mt-1">+12% from average</div>
-            </div>
-            
-            <div className="text-center p-4 bg-black/5 rounded-xl">
-              <div className="text-2xl font-bold text-black mb-1">65</div>
-              <div className="text-sm text-black/70">Expected Orders</div>
-              <div className="text-xs text-green-400 mt-1">+8% growth</div>
-            </div>
-            
-            <div className="text-center p-4 bg-black/5 rounded-xl">
-              <div className="text-2xl font-bold text-black mb-1">$85K</div>
-              <div className="text-sm text-black/70">Annual Goal</div>
-              <div className="text-xs text-blue-400 mt-1">67% achieved</div>
-            </div>
-            
-            <div className="text-center p-4 bg-black/5 rounded-xl">
-              <div className="text-2xl font-bold text-black mb-1">35</div>
-              <div className="text-sm text-black/70">New Customers Goal</div>
-              <div className="text-xs text-blue-400 mt-1">68% achieved</div>
-            </div>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={analytics.monthlySales}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="totalRevenue" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Top Selling Products */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Top Selling Products</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm text-left border">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="px-4 py-2 border">Product Name</th>
+                  <th className="px-4 py-2 border text-center">Quantity Sold</th>
+                  <th className="px-4 py-2 border text-center">Revenue (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analytics.topSellingProducts.map((product, index) => (
+                  <tr
+                    key={index}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-4 py-2 border">{product.productName}</td>
+                    <td className="px-4 py-2 border text-center">
+                      {product.totalQuantity}
+                    </td>
+                    <td className="px-4 py-2 border text-center">
+                      ₹{product.totalRevenue.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
@@ -289,4 +179,4 @@ const AdminAnalytics = () => {
   );
 };
 
-export default AdminAnalytics;
+export default Analytics;

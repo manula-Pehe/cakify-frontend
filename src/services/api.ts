@@ -1,50 +1,65 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
 // Base API configuration
-export const API_BASE_URL = 'http://localhost:9090/api';
+export const API_BASE_URL = "http://localhost:9090/api";
 
-// Create axios instance with default config
-export const apiClient = axios.create({
+// Create axios instance
+const instance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000, // 10 seconds timeout
+  headers: { "Content-Type": "application/json" },
+  timeout: 10000, // 10s timeout
 });
 
-// Request interceptor (useful for adding auth tokens later)
-apiClient.interceptors.request.use(
+// Request interceptor (optional)
+instance.interceptors.request.use(
   (config) => {
-    // You can add auth token here later
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    // Later you can attach tokens here:
+    const token = localStorage.getItem("admin-token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor (global error handling)
-apiClient.interceptors.response.use(
-  (response) => {
-    // Return just the data
-    return response.data;
-  },
+// Response interceptor — unwraps response.data
+instance.interceptors.response.use(
+  (response) => response.data,
   (error) => {
-    // Handle errors globally
     if (error.response) {
-      // Server responded with error status
       const message = error.response.data?.message || error.response.statusText;
       throw new Error(`API Error (${error.response.status}): ${message}`);
     } else if (error.request) {
-      // Request made but no response
-      throw new Error('No response from server. Please check your connection.');
+      throw new Error("No response from server. Please check your connection.");
     } else {
-      // Something else happened
-      throw new Error(error.message || 'An unexpected error occurred');
+      throw new Error(error.message || "Unexpected error occurred.");
     }
   }
 );
+
+// Helper wrapper
+export const apiClient = {
+  get: async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+    const res = await instance.get<T, T>(url, config);
+    return res;
+  },
+  post: async <T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T> => {
+    const res = await instance.post<T, T>(url, data, config);
+    return res;
+  },
+  put: async <T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T> => {
+    const res = await instance.put<T, T>(url, data, config);
+    return res;
+  },
+  delete: async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+    const res = await instance.delete<T, T>(url, config);
+    return res;
+  },
+};

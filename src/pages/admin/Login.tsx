@@ -1,15 +1,29 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Cake, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+// Backend response type
+interface AuthResponse {
+  token: string;
+  username: string;
+}
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -18,14 +32,13 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Basic validation
     if (!formData.username || !formData.password) {
       toast({
         title: "Missing Credentials",
@@ -36,26 +49,46 @@ const AdminLogin = () => {
       return;
     }
 
-    // Simulate authentication (demo purposes)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    if (formData.username === "admin" && formData.password === "admin123") {
+    try {
+      const res = await axios.post<AuthResponse>(
+        "http://localhost:9090/api/admin/login",
+        {
+          username: formData.username,
+          password: formData.password,
+        }
+      );
+
+      const data = res.data;
+
+      if (data && data.token) {
+        localStorage.setItem("admin-token", data.token);
+        localStorage.setItem("admin-username", data.username);
+
+        toast({
+          title: "Login Successful",
+          description: `Welcome, ${data.username}!`,
+        });
+
+        navigate("/admin");
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Unexpected server response. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
       toast({
-        title: "Login Successful",
-        description: "Welcome to Sweet Delights Admin Panel!",
-      });
-      // Store auth token (demo)
-      localStorage.setItem("admin-token", "demo-token");
-      navigate("/admin");
-    } else {
-      toast({
-        title: "Invalid Credentials",
-        description: "Please check your username and password.",
+        title: "Login Failed",
+        description:
+          error.response?.data?.message ||
+          error.message ||
+          "Invalid username or password.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (
@@ -75,7 +108,7 @@ const AdminLogin = () => {
               </CardDescription>
             </div>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
@@ -86,13 +119,15 @@ const AdminLogin = () => {
                   <Input
                     id="username"
                     value={formData.username}
-                    onChange={(e) => handleInputChange("username", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("username", e.target.value)
+                    }
                     placeholder="Enter your username"
                     className="bg-black/10 border-black/20 text-black placeholder-black/60"
                     required
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="password" className="text-black">
                     Password
@@ -102,7 +137,9 @@ const AdminLogin = () => {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
-                      onChange={(e) => handleInputChange("password", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("password", e.target.value)
+                      }
                       placeholder="Enter your password"
                       className="bg-black/10 border-black/20 text-black placeholder-black/60 pr-10"
                       required
@@ -114,14 +151,18 @@ const AdminLogin = () => {
                       className="absolute right-0 top-0 h-full px-3 text-black/60 hover:text-black"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full bg-black text-secondary hover:bg-black/90"
                 disabled={isLoading}
                 size="lg"
@@ -130,15 +171,9 @@ const AdminLogin = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-black/80 text-sm">
-                Demo Credentials: admin / admin123
-              </p>
-            </div>
-            
             <div className="mt-8 pt-6 border-t border-black/20 text-center">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="text-black/80 hover:text-black text-sm transition-colors"
               >
                 ← Back to Website
