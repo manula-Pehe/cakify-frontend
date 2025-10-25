@@ -2,17 +2,22 @@ import { apiClient } from './api';
 
 // Types matching your backend Order entity
 export interface Order {
-  id: number;
+  orderId: number; // Changed from id to orderId
+  userId?: number;
+  productId?: number;
   customerName: string;
   customerEmail: string;
-  customerPhone: string;
+  customerPhone?: string;
   deliveryAddress: string;
-  orderDate: string;
-  deliveryDate: string;
+  totalAmount: string | number; // BigDecimal as string or number
+  quantity: number;
   status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'READY' | 'DELIVERED' | 'CANCELLED';
-  totalAmount: number;
+  orderDate: string;
+  deliveryDate?: string;
   specialNotes?: string;
   orderItems?: OrderItem[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface OrderItem {
