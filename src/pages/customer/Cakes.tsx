@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import CakeCard from "@/components/cake/CakeCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -164,8 +165,8 @@ const Cakes = () => {
                   We specialize in custom cakes! Contact us to discuss your unique requirements 
                   and let us create something special just for you.
                 </p>
-                <Button variant="brown" size="lg">
-                  Request Custom Cake
+                <Button asChild variant="brown" size="lg">
+                  <Link to="/contact">Request Custom Cake</Link>
                 </Button>
               </div>
             </div>
