@@ -75,15 +75,6 @@ const CakeDetails = () => {
     ? (cakeReviews.reduce((acc, r) => acc + r.rating, 0) / cakeReviews.length).toFixed(1)
     : "0";
   
-  // Calculate price based on selected size
-  const getCurrentPrice = () => {
-    if (!cake) return 0;
-    if (selectedSize && cake.sizePrices && cake.sizePrices[selectedSize]) {
-      return cake.sizePrices[selectedSize];
-    }
-    return cake.price;
-  };
-  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -217,19 +208,13 @@ const CakeDetails = () => {
                 </Select>
               </div>
 
-              {/* Price Display */}
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-secondary">
-                  LKR {getCurrentPrice().toLocaleString()}
+                  LKR {cake.price.toLocaleString()}
                 </span>
-                {cake.sizes.length > 0 && !selectedSize && (
+                {cake.sizes.length > 0 && (
                   <span className="text-sm text-muted-foreground">
-                    Select size to see price
-                  </span>
-                )}
-                {cake.sizes.length > 0 && selectedSize && cake.sizePrices && cake.sizePrices[selectedSize] && (
-                  <span className="text-sm text-muted-foreground">
-                    ({selectedSize})
+                    Starting price
                   </span>
                 )}
               </div>

@@ -5,13 +5,12 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number; // Base price (for backward compatibility)
+  price: number;
   image: string;
   category: string; // Display name (may be deprecated in favor of categoryName)
   categoryId?: number; // Backend ID for category
   categoryName?: string; // Optional explicit name if provided by backend
   sizes: string[];
-  sizePrices?: { [size: string]: number }; // Size-specific pricing
   availability: boolean;
   featured: boolean;
 }
@@ -23,7 +22,6 @@ export interface ProductRequest {
   price: number;
   categoryId: number | null;
   sizes: string[];
-  sizePrices?: { [size: string]: number }; // Size-specific pricing
   availability: boolean;
   featured: boolean;
   imageUrl?: string;
