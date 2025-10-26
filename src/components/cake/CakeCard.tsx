@@ -3,6 +3,7 @@ import { Cake } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "lucide-react";
+import { getImageUrl } from "@/services/api";
 
 interface CakeCardProps {
   cake: Cake;
@@ -13,7 +14,7 @@ const CakeCard = ({ cake }: CakeCardProps) => {
     <div className="cake-card group">
       <div className="relative mb-4 overflow-hidden rounded-xl">
         <img
-          src={cake.image}
+          src={getImageUrl(cake.image)}
           alt={cake.name}
           className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
         />

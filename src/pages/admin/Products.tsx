@@ -14,6 +14,7 @@ import { productService, Product } from "@/services/productService";
 import { categoryService, Category } from "@/services/categoryService";
 import { Link } from "react-router-dom";
 import { reviewService, Review, ReviewStats } from "@/services/reviewService";
+import { getImageUrl } from "@/services/api";
 
 const AdminProducts = () => {
   const { toast } = useToast();
@@ -578,7 +579,7 @@ const AdminProducts = () => {
               {products.map((product) => (
                 <div key={product.id} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
                   <img
-                    src={product.image}
+                    src={getImageUrl(product.image)}
                     alt={product.name}
                     className="w-16 h-16 object-cover rounded-lg"
                   />

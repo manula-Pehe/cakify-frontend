@@ -9,6 +9,7 @@ import { categoryService } from "@/services/categoryService";
 import { reviewService, Review } from "@/services/reviewService";
 import { useToast } from "@/hooks/use-toast";
 import ReviewDialog from "@/components/customer/ReviewDialog";
+import { getImageUrl } from "@/services/api";
 
 const CakeDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -140,7 +141,7 @@ const CakeDetails = () => {
           <div className="space-y-4">
             <div className="relative">
               <img
-                src={cake.image}
+                src={getImageUrl(cake.image)}
                 alt={cake.name}
                 className="w-full h-96 lg:h-[500px] object-cover rounded-2xl shadow-[var(--shadow-card)]"
               />
@@ -412,7 +413,7 @@ const CakeDetails = () => {
                 <div key={relatedCake.id} className="cake-card">
                   <Link to={`/cakes/${relatedCake.id}`}>
                     <img
-                      src={relatedCake.image}
+                      src={getImageUrl(relatedCake.image)}
                       alt={relatedCake.name}
                       className="w-full h-48 object-cover rounded-xl mb-4"
                     />
