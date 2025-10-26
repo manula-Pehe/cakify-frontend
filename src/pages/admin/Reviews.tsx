@@ -14,12 +14,21 @@ const AdminReviews = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [processingReviewId, setProcessingReviewId] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected">("pending");
-  const [rejectedReviews, setRejectedReviews] = useState<Set<number>>(new Set());
+  const [rejectedReviews, setRejectedReviews] = useState<Set<number>>(() => {
+    // Load rejected reviews from localStorage on initialization
+    const stored = localStorage.getItem('rejectedReviews');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
 
   useEffect(() => {
     loadReviews();
     loadProducts();
   }, []);
+
+  // Persist rejected reviews to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('rejectedReviews', JSON.stringify(Array.from(rejectedReviews)));
+  }, [rejectedReviews]);
 
   const loadProducts = async () => {
     try {

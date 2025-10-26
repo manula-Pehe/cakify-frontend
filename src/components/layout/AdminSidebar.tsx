@@ -34,7 +34,13 @@ const AdminSidebar = () => {
       );
       const reviewsArrays = await Promise.all(allReviewsPromises);
       const allReviews = reviewsArrays.flat();
-      const pending = allReviews.filter((r) => !r.approved).length;
+      
+      // Get rejected reviews from localStorage
+      const stored = localStorage.getItem('rejectedReviews');
+      const rejectedReviewsSet = stored ? new Set(JSON.parse(stored)) : new Set();
+      
+      // Count only truly pending reviews (not approved and not rejected)
+      const pending = allReviews.filter((r) => !r.approved && !rejectedReviewsSet.has(r.id)).length;
       setPendingReviewsCount(pending);
     } catch (error) {
       console.error("Failed to load pending reviews count:", error);
