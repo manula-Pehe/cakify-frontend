@@ -69,7 +69,7 @@ const AdminSidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="space-y-2 flex-1">
+      <nav className="space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
