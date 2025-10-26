@@ -9,7 +9,8 @@ const AdminLayout = () => {
     // Check if user is authenticated (demo purposes)
     const token = localStorage.getItem("admin-token");
     if (!token) {
-      navigate("/admin/login");
+      // Auto-login for development
+      localStorage.setItem("admin-token", "demo-admin-token");
     }
   }, [navigate]);
 
