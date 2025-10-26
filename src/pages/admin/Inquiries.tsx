@@ -1,39 +1,78 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { inquiries, Inquiry } from "@/data/mockData";
-import { MessageSquare, Reply, Trash2, CheckCircle, Mail, Calendar } from "lucide-react";
+import { MessageSquare, Reply, Trash2, CheckCircle, Mail, Calendar, Paperclip, Eye, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import InquiryDetailDialog from "@/components/admin/InquiryDetailDialog";
+import * as inquiryService from "@/services/inquiryService";
+import type { InquiryResponse } from "@/services/inquiryService";
 
 const AdminInquiries = () => {
   const { toast } = useToast();
-  const [inquiryList, setInquiryList] = useState<Inquiry[]>(inquiries);
-  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
+  const [inquiryList, setInquiryList] = useState<InquiryResponse[]>([]);
+  const [selectedInquiry, setSelectedInquiry] = useState<InquiryResponse | null>(null);
   const [replyText, setReplyText] = useState("");
   const [isReplyDialogOpen, setIsReplyDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
 
   const statusColors = {
-    new: "bg-blue-100 text-blue-800",
-    replied: "bg-green-100 text-green-800",
-    resolved: "bg-gray-100 text-gray-800",
+    NEW: "bg-blue-100 text-blue-800",
+    RESOLVED: "bg-green-100 text-green-800",
   };
 
-  const filteredInquiries = statusFilter === "all" 
-    ? inquiryList 
-    : inquiryList.filter(inquiry => inquiry.status === statusFilter);
+  // Fetch inquiries on component mount and when filter changes
+  useEffect(() => {
+    fetchInquiries();
+  }, [statusFilter]);
 
-  const handleReply = (inquiry: Inquiry) => {
+  const fetchInquiries = async () => {
+    try {
+      setIsLoading(true);
+      let data: InquiryResponse[];
+      
+      if (statusFilter === "all") {
+        data = await inquiryService.getAllInquiries();
+      } else if (statusFilter === "NEW") {
+        data = await inquiryService.getNewInquiries();
+      } else if (statusFilter === "RESOLVED") {
+        data = await inquiryService.getResolvedInquiries();
+      } else {
+        data = await inquiryService.getAllInquiries();
+      }
+      
+      setInquiryList(data);
+    } catch (error) {
+      console.error("Error fetching inquiries:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load inquiries. Please check if backend is running.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredInquiries = inquiryList;
+
+  const handleReply = (inquiry: InquiryResponse) => {
     setSelectedInquiry(inquiry);
     setReplyText("");
     setIsReplyDialogOpen(true);
   };
 
-  const sendReply = () => {
+  const handleViewDetails = (inquiry: InquiryResponse) => {
+    setSelectedInquiry(inquiry);
+    setIsDetailDialogOpen(true);
+  };
+
+  const sendReply = async () => {
     if (!replyText.trim()) {
       toast({
         title: "Empty Reply",
@@ -44,17 +83,24 @@ const AdminInquiries = () => {
     }
 
     if (selectedInquiry) {
-      const updatedInquiries = inquiryList.map(inquiry =>
-        inquiry.id === selectedInquiry.id
-          ? { ...inquiry, status: "replied" as const }
-          : inquiry
-      );
-      setInquiryList(updatedInquiries);
-      
-      toast({
-        title: "Reply Sent",
-        description: "Your reply has been sent to the customer.",
-      });
+      try {
+        await inquiryService.replyToInquiry(selectedInquiry.id, replyText);
+        
+        toast({
+          title: "Reply Sent",
+          description: "Your reply has been sent and inquiry marked as resolved.",
+        });
+        
+        // Refresh the list
+        await fetchInquiries();
+      } catch (error) {
+        console.error("Error sending reply:", error);
+        toast({
+          title: "Error",
+          description: "Failed to send reply. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
 
     setIsReplyDialogOpen(false);
@@ -62,27 +108,44 @@ const AdminInquiries = () => {
     setReplyText("");
   };
 
-  const markAsResolved = (inquiryId: string) => {
-    const updatedInquiries = inquiryList.map(inquiry =>
-      inquiry.id === inquiryId
-        ? { ...inquiry, status: "resolved" as const }
-        : inquiry
-    );
-    setInquiryList(updatedInquiries);
-    
-    toast({
-      title: "Inquiry Resolved",
-      description: "Inquiry has been marked as resolved.",
-    });
+  const markAsResolved = async (inquiryId: number) => {
+    try {
+      // Backend automatically marks as resolved when replying
+      // For now, we'll use reply with an empty message or just refresh
+      toast({
+        title: "Info",
+        description: "Please use the Reply button to mark as resolved.",
+      });
+    } catch (error) {
+      console.error("Error marking as resolved:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update inquiry status.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteInquiry = (inquiryId: string) => {
+  const deleteInquiry = async (inquiryId: number) => {
     if (window.confirm("Are you sure you want to delete this inquiry?")) {
-      setInquiryList(inquiryList.filter(inquiry => inquiry.id !== inquiryId));
-      toast({
-        title: "Inquiry Deleted",
-        description: "The inquiry has been deleted.",
-      });
+      try {
+        await inquiryService.deleteInquiry(inquiryId);
+        
+        toast({
+          title: "Inquiry Deleted",
+          description: "The inquiry has been deleted successfully.",
+        });
+        
+        // Refresh the list
+        await fetchInquiries();
+      } catch (error) {
+        console.error("Error deleting inquiry:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete inquiry. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -104,9 +167,8 @@ const AdminInquiries = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Inquiries</SelectItem>
-            <SelectItem value="new">New</SelectItem>
-            <SelectItem value="replied">Replied</SelectItem>
-            <SelectItem value="resolved">Resolved</SelectItem>
+            <SelectItem value="NEW">New</SelectItem>
+            <SelectItem value="RESOLVED">Resolved</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -121,7 +183,7 @@ const AdminInquiries = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold text-black">
-                  {inquiryList.filter(i => i.status === "new").length}
+                  {inquiryList.filter(i => i.status === "NEW").length}
                 </p>
                 <p className="text-black/70 text-sm">New Inquiries</p>
               </div>
@@ -137,9 +199,9 @@ const AdminInquiries = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold text-black">
-                  {inquiryList.filter(i => i.status === "replied").length}
+                  {inquiryList.filter(i => i.status === "RESOLVED").length}
                 </p>
-                <p className="text-black/70 text-sm">Replied</p>
+                <p className="text-black/70 text-sm">Resolved</p>
               </div>
             </div>
           </CardContent>
@@ -148,14 +210,14 @@ const AdminInquiries = () => {
         <Card className="glass-card">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="bg-gray-500/20 p-2 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-gray-400" />
+              <div className="bg-purple-500/20 p-2 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-purple-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-black">
-                  {inquiryList.filter(i => i.status === "resolved").length}
+                  {inquiryList.length}
                 </p>
-                <p className="text-black/70 text-sm">Resolved</p>
+                <p className="text-black/70 text-sm">Total</p>
               </div>
             </div>
           </CardContent>
@@ -174,7 +236,17 @@ const AdminInquiries = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {filteredInquiries.length > 0 ? (
+          {isLoading ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-12 w-12 text-black/50 mx-auto mb-4 animate-spin" />
+              <h3 className="text-xl font-semibold text-black mb-2">
+                Loading inquiries...
+              </h3>
+              <p className="text-black/70">
+                Please wait while we fetch the data from the server.
+              </p>
+            </div>
+          ) : filteredInquiries.length > 0 ? (
             <div className="space-y-4">
               {filteredInquiries.map((inquiry) => (
                 <div key={inquiry.id} className="p-6 bg-black/5 rounded-xl border border-black/10">
@@ -189,7 +261,7 @@ const AdminInquiries = () => {
                           </div>
                           <div className="flex items-center gap-1 text-black/70 text-sm">
                             <Calendar className="h-4 w-4" />
-                            {formatDate(inquiry.date)}
+                            {formatDate(inquiry.createdAt)}
                           </div>
                         </div>
                       </div>
@@ -203,10 +275,27 @@ const AdminInquiries = () => {
                     <p className="text-black/90 leading-relaxed">{inquiry.message}</p>
                   </div>
 
-                  <div className="flex gap-2">
-                    {inquiry.status !== "resolved" && (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-blue-500/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/30"
+                      onClick={() => handleViewDetails(inquiry)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      className="bg-purple-500/20 border-purple-500/30 text-purple-400 hover:bg-purple-500/30"
+                      onClick={() => handleViewDetails(inquiry)}
+                    >
+                      <Paperclip className="h-4 w-4 mr-2" />
+                      Attachments
+                    </Button>
+                    
+                    {inquiry.status !== "RESOLVED" && (
                       <Button
-                        variant="outline"
                         size="sm"
                         className="bg-black/10 border-black/20 text-black hover:bg-black/20"
                         onClick={() => handleReply(inquiry)}
@@ -216,9 +305,8 @@ const AdminInquiries = () => {
                       </Button>
                     )}
                     
-                    {inquiry.status !== "resolved" && (
+                    {inquiry.status !== "RESOLVED" && (
                       <Button
-                        variant="outline"
                         size="sm"
                         className="bg-green-500/20 border-green-500/30 text-green-400 hover:bg-green-500/30"
                         onClick={() => markAsResolved(inquiry.id)}
@@ -229,7 +317,6 @@ const AdminInquiries = () => {
                     )}
                     
                     <Button
-                      variant="ghost"
                       size="sm"
                       className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
                       onClick={() => deleteInquiry(inquiry.id)}
@@ -288,7 +375,7 @@ const AdminInquiries = () => {
           )}
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReplyDialogOpen(false)}>
+            <Button onClick={() => setIsReplyDialogOpen(false)}>
               Cancel
             </Button>
             <Button onClick={sendReply}>
@@ -298,6 +385,13 @@ const AdminInquiries = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Inquiry Detail Dialog with Attachments */}
+      <InquiryDetailDialog
+        inquiry={selectedInquiry}
+        open={isDetailDialogOpen}
+        onOpenChange={setIsDetailDialogOpen}
+      />
     </div>
   );
 };
