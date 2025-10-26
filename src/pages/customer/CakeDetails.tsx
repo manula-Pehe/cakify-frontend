@@ -201,7 +201,7 @@ const CakeDetails = () => {
                   <SelectContent>
                     {cake.sizes.map((size) => (
                       <SelectItem key={size} value={size}>
-                        {size} - LKR {(cake.price + (size.includes("10") ? 1000 : size.includes("12") ? 2500 : 0)).toLocaleString()}
+                        {size}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -212,9 +212,11 @@ const CakeDetails = () => {
                 <span className="text-3xl font-bold text-secondary">
                   LKR {cake.price.toLocaleString()}
                 </span>
-                <span className="text-sm text-muted-foreground">
-                  Starting price (6 inch)
-                </span>
+                {cake.sizes.length > 0 && (
+                  <span className="text-sm text-muted-foreground">
+                    Starting price
+                  </span>
+                )}
               </div>
             </div>
 
@@ -272,10 +274,6 @@ const CakeDetails = () => {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Preparation Time:</span>
                   <span className="text-foreground">2-3 days</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Serves:</span>
-                  <span className="text-foreground">6-20 people</span>
                 </div>
               </div>
             </div>

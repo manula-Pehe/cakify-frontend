@@ -48,6 +48,10 @@ const AdminProducts = () => {
   
   // Size input state
   const [newSize, setNewSize] = useState("");
+  const [newSizePrice, setNewSizePrice] = useState("");
+  
+  // Size-specific pricing: { "6 inch": "2500", "8 inch": "3500", ... }
+  const [sizePrices, setSizePrices] = useState<Record<string, string>>({});
 
   // Fetch products on component mount
   useEffect(() => {
@@ -143,6 +147,8 @@ const AdminProducts = () => {
     setSelectedImage(null);
     setImagePreview(null);
     setNewSize("");
+    setNewSizePrice("");
+    setSizePrices({});
   };
 
   const handleEdit = (product: Product) => {
@@ -159,6 +165,9 @@ const AdminProducts = () => {
     setImagePreview(product.image);
     setSelectedImage(null);
     setNewSize("");
+    setNewSizePrice("");
+    // TODO: Load size prices from product if backend supports it
+    setSizePrices({});
     setIsDialogOpen(true);
   };
 
@@ -202,11 +211,30 @@ const AdminProducts = () => {
 
   const handleAddSize = () => {
     if (newSize.trim() && !formData.sizes.includes(newSize.trim())) {
+      const trimmedSize = newSize.trim();
+      const trimmedPrice = newSizePrice.trim();
+      
+      if (!trimmedPrice || parseFloat(trimmedPrice) <= 0) {
+        toast({
+          title: "Invalid Price",
+          description: "Please enter a valid price for this size",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setFormData({
         ...formData,
-        sizes: [...formData.sizes, newSize.trim()]
+        sizes: [...formData.sizes, trimmedSize]
       });
+      
+      setSizePrices({
+        ...sizePrices,
+        [trimmedSize]: trimmedPrice
+      });
+      
       setNewSize("");
+      setNewSizePrice("");
     }
   };
 
@@ -215,10 +243,15 @@ const AdminProducts = () => {
       ...formData,
       sizes: formData.sizes.filter(size => size !== sizeToRemove)
     });
+    
+    // Remove price for this size
+    const updatedPrices = { ...sizePrices };
+    delete updatedPrices[sizeToRemove];
+    setSizePrices(updatedPrices);
   };
 
   const handleSave = async () => {
-    if (!formData.name || !formData.description || !formData.price) {
+    if (!formData.name || !formData.description) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -227,13 +260,34 @@ const AdminProducts = () => {
       return;
     }
 
-    if (formData.sizes.length === 0) {
-      toast({
-        title: "Missing Sizes",
-        description: "Please add at least one size for the cake.",
-        variant: "destructive",
-      });
-      return;
+    // Validate pricing based on sizes
+    if (formData.sizes.length > 0) {
+      // Has sizes - validate all sizes have prices
+      const missingPrices = formData.sizes.filter(size => !sizePrices[size] || parseFloat(sizePrices[size]) <= 0);
+      if (missingPrices.length > 0) {
+        toast({
+          title: "Missing Size Prices",
+          description: `Please add prices for: ${missingPrices.join(", ")}`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Use the first size price as the base price for products with sizes
+      const firstSizePrice = sizePrices[formData.sizes[0]];
+      if (firstSizePrice) {
+        formData.price = firstSizePrice;
+      }
+    } else {
+      // No sizes - validate single price
+      if (!formData.price || parseFloat(formData.price) <= 0) {
+        toast({
+          title: "Invalid Price",
+          description: "Please enter a valid price for the product.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     const productData = {
@@ -279,6 +333,9 @@ const AdminProducts = () => {
           description: "New product has been added to the catalog.",
         });
       }
+
+      // TODO: Save size-specific prices to backend when supported
+      console.log("Size prices:", sizePrices);
 
       // Reload products from server
       await loadProducts();
@@ -456,19 +513,22 @@ const AdminProducts = () => {
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="price">Base Price *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    placeholder="0.00"
-                  />
-                </div>
+                {/* Only show base price if no sizes */}
+                {formData.sizes.length === 0 && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="price">Price (LKR) *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={formData.price}
+                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                )}
                 
-                <div className="grid gap-2">
+                <div className={`grid gap-2 ${formData.sizes.length === 0 ? '' : 'col-span-2'}`}>
                   <Label htmlFor="category">Category</Label>
                   <Select 
                     value={formData.categoryId !== null ? String(formData.categoryId) : undefined}
@@ -488,14 +548,15 @@ const AdminProducts = () => {
                 </div>
               </div>
               
-              {/* Sizes Input */}
+              {/* Sizes Input with Pricing */}
               <div className="grid gap-2">
-                <Label>Available Sizes *</Label>
-                <div className="flex gap-2">
+                <Label>Available Sizes {formData.sizes.length > 0 ? '*' : '(Optional)'}</Label>
+                <div className="grid grid-cols-12 gap-2">
                   <Input
+                    className="col-span-6"
                     value={newSize}
                     onChange={(e) => setNewSize(e.target.value)}
-                    placeholder="e.g., 6 inch, 8 inch, 10 inch"
+                    placeholder="e.g., Small, Medium, Large"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -503,20 +564,40 @@ const AdminProducts = () => {
                       }
                     }}
                   />
-                  <Button type="button" onClick={handleAddSize} variant="outline">
+                  <Input
+                    className="col-span-5"
+                    type="number"
+                    step="0.01"
+                    value={newSizePrice}
+                    onChange={(e) => setNewSizePrice(e.target.value)}
+                    placeholder="Price (LKR)"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddSize();
+                      }
+                    }}
+                  />
+                  <Button type="button" onClick={handleAddSize} variant="outline" className="col-span-1">
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
+                {formData.sizes.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Suggested: Small, Medium, Large • Leave empty for single-priced products
+                  </p>
+                )}
                 {formData.sizes.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {formData.sizes.map((size, index) => (
-                      <Badge key={index} variant="secondary" className="pl-3 pr-1 py-1">
-                        {size}
+                      <Badge key={index} variant="secondary" className="pl-3 pr-1 py-1.5 flex items-center gap-2">
+                        <span className="font-medium">{size}</span>
+                        <span className="text-xs opacity-75">LKR {sizePrices[size] || '0'}</span>
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-4 w-4 ml-2 hover:bg-transparent"
+                          className="h-4 w-4 ml-1 hover:bg-transparent"
                           onClick={() => handleRemoveSize(size)}
                         >
                           <X className="h-3 w-3" />
