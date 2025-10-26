@@ -13,7 +13,8 @@ const AdminReviews = () => {
   const [products, setProducts] = useState<Map<number, Product>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [processingReviewId, setProcessingReviewId] = useState<number | null>(null);
-  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved">("pending");
+  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const [rejectedReviews, setRejectedReviews] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadReviews();
@@ -65,6 +66,12 @@ const AdminReviews = () => {
     try {
       setProcessingReviewId(review.id);
       await reviewService.updateApprovalStatus(review.productId, review.id, true);
+      // Remove from rejected set if it was there
+      setRejectedReviews((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(review.id);
+        return newSet;
+      });
       toast({
         title: "Review Approved",
         description: "Review is now visible to customers",
@@ -85,6 +92,8 @@ const AdminReviews = () => {
     try {
       setProcessingReviewId(review.id);
       await reviewService.updateApprovalStatus(review.productId, review.id, false);
+      // Add to rejected set
+      setRejectedReviews((prev) => new Set(prev).add(review.id));
       toast({
         title: "Review Rejected",
         description: "Review has been hidden from customers",
@@ -124,13 +133,15 @@ const AdminReviews = () => {
   };
 
   const filteredReviews = reviews.filter((review) => {
-    if (filterStatus === "pending") return !review.approved;
+    if (filterStatus === "pending") return !review.approved && !rejectedReviews.has(review.id);
     if (filterStatus === "approved") return review.approved;
+    if (filterStatus === "rejected") return !review.approved && rejectedReviews.has(review.id);
     return true;
   });
 
-  const pendingCount = reviews.filter((r) => !r.approved).length;
+  const pendingCount = reviews.filter((r) => !r.approved && !rejectedReviews.has(r.id)).length;
   const approvedCount = reviews.filter((r) => r.approved).length;
+  const rejectedCount = reviews.filter((r) => !r.approved && rejectedReviews.has(r.id)).length;
 
   return (
     <div className="space-y-6">
@@ -140,7 +151,7 @@ const AdminReviews = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardDescription>Pending Reviews</CardDescription>
@@ -151,6 +162,12 @@ const AdminReviews = () => {
           <CardHeader className="pb-3">
             <CardDescription>Approved Reviews</CardDescription>
             <CardTitle className="text-3xl text-green-600">{approvedCount}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Rejected Reviews</CardDescription>
+            <CardTitle className="text-3xl text-red-600">{rejectedCount}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -178,6 +195,13 @@ const AdminReviews = () => {
           Approved ({approvedCount})
         </Button>
         <Button
+          variant={filterStatus === "rejected" ? "default" : "outline"}
+          onClick={() => setFilterStatus("rejected")}
+          className={filterStatus === "rejected" ? "bg-red-600 hover:bg-red-700" : ""}
+        >
+          Rejected ({rejectedCount})
+        </Button>
+        <Button
           variant={filterStatus === "all" ? "default" : "outline"}
           onClick={() => setFilterStatus("all")}
         >
@@ -192,6 +216,7 @@ const AdminReviews = () => {
             <MessageSquare className="h-5 w-5" />
             {filterStatus === "pending" && "Pending Reviews"}
             {filterStatus === "approved" && "Approved Reviews"}
+            {filterStatus === "rejected" && "Rejected Reviews"}
             {filterStatus === "all" && "All Reviews"}
           </CardTitle>
         </CardHeader>
@@ -218,9 +243,19 @@ const AdminReviews = () => {
                           </h3>
                           <Badge
                             variant={review.approved ? "default" : "secondary"}
-                            className={review.approved ? "bg-green-500" : "bg-yellow-500"}
+                            className={
+                              review.approved 
+                                ? "bg-green-500" 
+                                : rejectedReviews.has(review.id)
+                                ? "bg-red-500"
+                                : "bg-yellow-500"
+                            }
                           >
-                            {review.approved ? "Approved" : "Pending"}
+                            {review.approved 
+                              ? "Approved" 
+                              : rejectedReviews.has(review.id)
+                              ? "Rejected"
+                              : "Pending"}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-3 text-sm text-gray-600">
@@ -253,21 +288,37 @@ const AdminReviews = () => {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
-                      {!review.approved ? (
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleApprove(review)}
-                          disabled={processingReviewId === review.id}
-                        >
-                          {processingReviewId === review.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          ) : (
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                          )}
-                          Approve
-                        </Button>
-                      ) : (
+                      {!review.approved && !rejectedReviews.has(review.id) ? (
+                        <>
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => handleApprove(review)}
+                            disabled={processingReviewId === review.id}
+                          >
+                            {processingReviewId === review.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : (
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                            )}
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                            onClick={() => handleReject(review)}
+                            disabled={processingReviewId === review.id}
+                          >
+                            {processingReviewId === review.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : (
+                              <XCircle className="h-4 w-4 mr-2" />
+                            )}
+                            Reject
+                          </Button>
+                        </>
+                      ) : review.approved ? (
                         <Button
                           size="sm"
                           variant="outline"
@@ -281,6 +332,20 @@ const AdminReviews = () => {
                             <XCircle className="h-4 w-4 mr-2" />
                           )}
                           Reject
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => handleApprove(review)}
+                          disabled={processingReviewId === review.id}
+                        >
+                          {processingReviewId === review.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                          )}
+                          Approve
                         </Button>
                       )}
                       <Button
@@ -309,6 +374,7 @@ const AdminReviews = () => {
               <p className="text-gray-600">
                 {filterStatus === "pending" && "No pending reviews at the moment"}
                 {filterStatus === "approved" && "No approved reviews yet"}
+                {filterStatus === "rejected" && "No rejected reviews yet"}
                 {filterStatus === "all" && "No reviews have been submitted yet"}
               </p>
             </div>
