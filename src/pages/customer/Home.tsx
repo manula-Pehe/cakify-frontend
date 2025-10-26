@@ -1,11 +1,31 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import CakeCard from "@/components/cake/CakeCard";
-import { cakes } from "@/data/mockData";
-import { ArrowRight, Star, Users, Clock } from "lucide-react";
+import { productService, Product } from "@/services/productService";
+import { ArrowRight, Star, Users, Clock, Loader2 } from "lucide-react";
 
 const Home = () => {
-  const featuredCakes = cakes.filter(cake => cake.featured);
+  const [featuredCakes, setFeaturedCakes] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadFeaturedCakes();
+  }, []);
+
+  const loadFeaturedCakes = async () => {
+    try {
+      setIsLoading(true);
+      const data = await productService.getFeatured();
+      setFeaturedCakes(data);
+    } catch (error) {
+      console.error("Failed to load featured cakes:", error);
+      // Fallback to empty array if API fails
+      setFeaturedCakes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -39,7 +59,7 @@ const Home = () => {
                 <img
                   src="/images/hero-cake.png"
                   alt="Beautiful handcrafted cake"
-                  className="w-full rounded-xl shadow-lg object-cover"
+                  className="w-full rounded-xl shadow-lg"
                 />
               </div>
             </div>
@@ -52,7 +72,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-foreground mb-4">
-              Why Choose Sweet Delights?
+              Why Choose Cakify?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               We're passionate about creating exceptional cakes that make your special moments unforgettable
@@ -105,20 +125,32 @@ const Home = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            {featuredCakes.map((cake) => (
-              <CakeCard key={cake.id} cake={cake} />
-            ))}
-          </div>
-          
-          <div className="text-center">
-            <Button asChild variant="cake" size="lg">
-              <Link to="/cakes">
-                View All Cakes
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : featuredCakes.length > 0 ? (
+            <>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                {featuredCakes.map((cake) => (
+                  <CakeCard key={cake.id} cake={cake} />
+                ))}
+              </div>
+              
+              <div className="text-center">
+                <Button asChild variant="cake" size="lg">
+                  <Link to="/cakes">
+                    View All Cakes
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No featured cakes available at the moment.</p>
+            </div>
+          )}
         </div>
       </section>
 
