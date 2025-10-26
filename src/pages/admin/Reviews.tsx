@@ -39,7 +39,7 @@ const AdminReviews = () => {
       // Fetch all reviews for all products
       const allReviewsPromises = productsList.map((product: Product) =>
         reviewService.getAllByProduct(product.id).then((reviews) =>
-          reviews.map((review) => ({ ...review, productId: product.id }))
+          reviews.map((review) => ({ ...review, productId: Number(product.id) }))
         )
       );
 
