@@ -24,7 +24,7 @@ const AdminSidebar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="admin-sidebar w-64 min-h-screen p-6">
+    <div className="admin-sidebar w-64 min-h-screen p-6 flex flex-col">
       {/* Logo */}
       <div className="flex items-center space-x-3 mb-8">
         <div className="bg-white/20 p-2 rounded-xl">
@@ -34,7 +34,7 @@ const AdminSidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="space-y-2">
+      <nav className="space-y-2 flex-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -55,17 +55,18 @@ const AdminSidebar = () => {
       </nav>
 
       {/* Logout Button */}
-      <div className="absolute bottom-6 left-6 right-6">
+      <div className="mt-6 pt-6 border-t border-white/20">
         <Button
-          variant="outline"
-          className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20"
+          variant="ghost"
+          className="w-full justify-start px-4 py-3 text-white/70 hover:bg-white/10 hover:text-white transition-colors rounded-xl"
           onClick={() => {
             // Handle logout
+            localStorage.removeItem("admin-token");
             window.location.href = "/admin/login";
           }}
         >
-          <LogOut className="h-4 w-4 mr-2" />
-          Logout
+          <LogOut className="h-5 w-5 mr-3" />
+          <span className="font-medium">Logout</span>
         </Button>
       </div>
     </div>
