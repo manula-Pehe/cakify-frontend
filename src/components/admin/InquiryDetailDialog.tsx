@@ -6,7 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -14,9 +13,7 @@ import {
   Mail,
   Calendar,
   Paperclip,
-  Upload as UploadIcon,
 } from "lucide-react";
-import InquiryAttachmentUpload from "./InquiryAttachmentUpload";
 import InquiryAttachmentList from "./InquiryAttachmentList";
 import {
   InquiryAttachment,
@@ -65,10 +62,6 @@ const InquiryDetailDialog: React.FC<InquiryDetailDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleUploadSuccess = (newAttachment: InquiryAttachment) => {
-    setAttachments([...attachments, newAttachment]);
   };
 
   const handleAttachmentDeleted = (attachmentId: number) => {
@@ -149,7 +142,7 @@ const InquiryDetailDialog: React.FC<InquiryDetailDialogProps> = ({
 
           <Separator />
 
-          {/* Attachments Section with Tabs */}
+          {/* Attachments Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-black flex items-center gap-2">
               <Paperclip className="h-5 w-5" />
@@ -161,40 +154,20 @@ const InquiryDetailDialog: React.FC<InquiryDetailDialogProps> = ({
               )}
             </h3>
 
-            <Tabs defaultValue="view" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="view" className="flex items-center gap-2">
-                  <Paperclip className="h-4 w-4" />
-                  View Attachments
-                </TabsTrigger>
-                <TabsTrigger value="upload" className="flex items-center gap-2">
-                  <UploadIcon className="h-4 w-4" />
-                  Upload New
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="view" className="mt-4">
-                {loading ? (
-                  <div className="text-center py-8">
-                    <p className="text-black/60">Loading attachments...</p>
-                  </div>
-                ) : (
-                  <InquiryAttachmentList
-                    inquiryId={inquiryId}
-                    attachments={attachments}
-                    onAttachmentDeleted={handleAttachmentDeleted}
-                    onRefresh={loadAttachments}
-                  />
-                )}
-              </TabsContent>
-
-              <TabsContent value="upload" className="mt-4">
-                <InquiryAttachmentUpload
+            <div className="mt-4">
+              {loading ? (
+                <div className="text-center py-8">
+                  <p className="text-black/60">Loading attachments...</p>
+                </div>
+              ) : (
+                <InquiryAttachmentList
                   inquiryId={inquiryId}
-                  onUploadSuccess={handleUploadSuccess}
+                  attachments={attachments}
+                  onAttachmentDeleted={handleAttachmentDeleted}
+                  onRefresh={loadAttachments}
                 />
-              </TabsContent>
-            </Tabs>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>
