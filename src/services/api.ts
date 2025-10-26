@@ -2,6 +2,32 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
 // Base API configuration
 export const API_BASE_URL = "http://localhost:9090/api";
+export const BACKEND_URL = "http://localhost:9090";
+
+// Helper function to get full image URL
+export const getImageUrl = (imagePath: string | null | undefined): string => {
+  if (!imagePath) return "/api/placeholder/400/400";
+  
+  // If already a full URL, return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // If it's a placeholder, return as is
+  if (imagePath.includes('placeholder')) {
+    return imagePath;
+  }
+  
+  // If it's a relative API path (starts with /api/), prepend backend URL
+  if (imagePath.startsWith('/api/')) {
+    return `${BACKEND_URL}${imagePath}`;
+  }
+  
+  // Otherwise it's a file path like "products/product_1_123.jpg"
+  // Convert to API endpoint: /api/images/{filename}
+  const filename = imagePath.includes('/') ? imagePath.split('/').pop() : imagePath;
+  return `${BACKEND_URL}/api/images/${filename}`;
+};
 
 // Create axios instance
 const instance: AxiosInstance = axios.create({
@@ -56,6 +82,14 @@ export const apiClient = {
     config?: AxiosRequestConfig
   ): Promise<T> => {
     const res = await instance.put<T, T>(url, data, config);
+    return res;
+  },
+  patch: async <T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T> => {
+    const res = await instance.patch<T, T>(url, data, config);
     return res;
   },
   delete: async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {

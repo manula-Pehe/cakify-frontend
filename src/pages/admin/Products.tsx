@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,12 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Package, Loader2, MessageSquare, Star } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Loader2, MessageSquare, Star, Upload, X, Tags } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { productService, Product } from "@/services/productService";
 import { categoryService, Category } from "@/services/categoryService";
 import { Link } from "react-router-dom";
 import { reviewService, Review, ReviewStats } from "@/services/reviewService";
+import { getImageUrl } from "@/services/api";
+import CategoryManagementDialog from "@/components/admin/CategoryManagementDialog";
 
 const AdminProducts = () => {
   const { toast } = useToast();
@@ -22,6 +24,8 @@ const AdminProducts = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [togglingAvailability, setTogglingAvailability] = useState<string | null>(null); // Track which product is being toggled
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -38,6 +42,18 @@ const AdminProducts = () => {
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [selectedProductForReviews, setSelectedProductForReviews] = useState<Product | null>(null);
   const [deletingReviewId, setDeletingReviewId] = useState<number | null>(null);
+  
+  // Image upload state
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Size input state
+  const [newSize, setNewSize] = useState("");
+  const [newSizePrice, setNewSizePrice] = useState("");
+  
+  // Size-specific pricing: { "6 inch": "2500", "8 inch": "3500", ... }
+  const [sizePrices, setSizePrices] = useState<Record<string, string>>({});
 
   // Fetch products on component mount
   useEffect(() => {
@@ -130,6 +146,11 @@ const AdminProducts = () => {
       featured: false,
     });
     setEditingProduct(null);
+    setSelectedImage(null);
+    setImagePreview(null);
+    setNewSize("");
+    setNewSizePrice("");
+    setSizePrices({});
   };
 
   const handleEdit = (product: Product) => {
@@ -143,11 +164,99 @@ const AdminProducts = () => {
       availability: product.availability,
       featured: product.featured,
     });
+    setImagePreview(product.image);
+    setSelectedImage(null);
+    setNewSize("");
+    setNewSizePrice("");
+    // Load size prices from product if available
+    setSizePrices(product.sizePrices ? 
+      Object.fromEntries(Object.entries(product.sizePrices).map(([size, price]) => [size, price.toString()])) : 
+      {}
+    );
     setIsDialogOpen(true);
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "File Too Large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAddSize = () => {
+    if (newSize.trim() && !formData.sizes.includes(newSize.trim())) {
+      const trimmedSize = newSize.trim();
+      const trimmedPrice = newSizePrice.trim();
+      
+      if (!trimmedPrice || parseFloat(trimmedPrice) <= 0) {
+        toast({
+          title: "Invalid Price",
+          description: "Please enter a valid price for this size",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setFormData({
+        ...formData,
+        sizes: [...formData.sizes, trimmedSize]
+      });
+      
+      setSizePrices({
+        ...sizePrices,
+        [trimmedSize]: trimmedPrice
+      });
+      
+      setNewSize("");
+      setNewSizePrice("");
+    }
+  };
+
+  const handleRemoveSize = (sizeToRemove: string) => {
+    setFormData({
+      ...formData,
+      sizes: formData.sizes.filter(size => size !== sizeToRemove)
+    });
+    
+    // Remove price for this size
+    const updatedPrices = { ...sizePrices };
+    delete updatedPrices[sizeToRemove];
+    setSizePrices(updatedPrices);
+  };
+
   const handleSave = async () => {
-    if (!formData.name || !formData.description || !formData.price) {
+    if (!formData.name || !formData.description) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -156,12 +265,45 @@ const AdminProducts = () => {
       return;
     }
 
+    // Validate pricing based on sizes
+    if (formData.sizes.length > 0) {
+      // Has sizes - validate all sizes have prices
+      const missingPrices = formData.sizes.filter(size => !sizePrices[size] || parseFloat(sizePrices[size]) <= 0);
+      if (missingPrices.length > 0) {
+        toast({
+          title: "Missing Size Prices",
+          description: `Please add prices for: ${missingPrices.join(", ")}`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Use the first size price as the base price for products with sizes
+      const firstSizePrice = sizePrices[formData.sizes[0]];
+      if (firstSizePrice) {
+        formData.price = firstSizePrice;
+      }
+    } else {
+      // No sizes - validate single price
+      if (!formData.price || parseFloat(formData.price) <= 0) {
+        toast({
+          title: "Invalid Price",
+          description: "Please enter a valid price for the product.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     const productData = {
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
       categoryId: formData.categoryId,
       sizes: formData.sizes,
+      sizePrices: formData.sizes.length > 0 ? Object.fromEntries(
+        Object.entries(sizePrices).map(([size, price]) => [size, parseFloat(price)])
+      ) : undefined,
       availability: formData.availability,
       featured: formData.featured,
       imageUrl: editingProduct?.image || "/api/placeholder/400/400",
@@ -170,21 +312,38 @@ const AdminProducts = () => {
     try {
       setIsSaving(true);
       
+      let savedProduct;
+      
       if (editingProduct) {
         // Update existing product
-        await productService.update(editingProduct.id, productData);
+        savedProduct = await productService.update(editingProduct.id, productData);
+        
+        // Upload image if new one selected
+        if (selectedImage) {
+          await productService.uploadImage(editingProduct.id, selectedImage);
+        }
+        
         toast({
           title: "Product Updated",
           description: "Product has been successfully updated.",
         });
       } else {
         // Create new product
-        await productService.create(productData);
+        savedProduct = await productService.create(productData);
+        
+        // Upload image if selected
+        if (selectedImage && savedProduct) {
+          await productService.uploadImage(savedProduct.id, selectedImage);
+        }
+        
         toast({
           title: "Product Added",
           description: "New product has been added to the catalog.",
         });
       }
+
+      // TODO: Save size-specific prices to backend when supported
+      console.log("Size prices:", sizePrices);
 
       // Reload products from server
       await loadProducts();
@@ -223,21 +382,35 @@ const AdminProducts = () => {
     }
   };
 
+  // ✅ OPTIMIZED: Update local state instead of reloading all products
   const toggleAvailability = async (productId: string) => {
     try {
-      await productService.toggleAvailability(productId);
-      // Reload products from server
-      await loadProducts();
+      setTogglingAvailability(productId);
+      
+      // Call backend to toggle availability
+      const updatedProduct = await productService.toggleAvailability(productId);
+      
+      // Update local state with the new product data
+      setProducts(products.map(p => 
+        p.id === productId ? { ...p, availability: updatedProduct.availability } : p
+      ));
+      
       toast({
         title: "Availability Updated",
-        description: "Product availability has been toggled.",
+        description: `Product is now ${updatedProduct.availability ? 'available' : 'unavailable'}.`,
       });
     } catch (error) {
+      console.error("Toggle availability error:", error);
       toast({
         title: "Error Updating Availability",
         description: error instanceof Error ? error.message : "Failed to update availability",
         variant: "destructive",
       });
+      
+      // Reload products on error to ensure UI is in sync
+      await loadProducts();
+    } finally {
+      setTogglingAvailability(null);
     }
   };
 
@@ -258,11 +431,14 @@ const AdminProducts = () => {
           <p className="text-gray-700">Manage your cake catalog and inventory</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/admin/categories">
-            <Button className="bg-red-500 text-white hover:bg-red-500/90">
-              Categories
-            </Button>
-          </Link>
+          <Button 
+            variant="outline"
+            onClick={() => setIsCategoryDialogOpen(true)}
+            className="gap-2"
+          >
+            <Tags className="h-4 w-4" />
+            Manage Categories
+          </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
@@ -287,6 +463,45 @@ const AdminProducts = () => {
             </DialogHeader>
             
             <div className="grid gap-4 py-4">
+              {/* Image Upload */}
+              <div className="grid gap-2">
+                <Label>Product Image</Label>
+                {imagePreview ? (
+                  <div className="relative">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-full h-48 object-cover rounded-lg border"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={handleRemoveImage}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600 mb-1">Click to upload image</p>
+                    <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+              </div>
+              
               <div className="grid gap-2">
                 <Label htmlFor="name">Cake Name *</Label>
                 <Input
@@ -309,19 +524,22 @@ const AdminProducts = () => {
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="price">Base Price *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    placeholder="0.00"
-                  />
-                </div>
+                {/* Only show base price if no sizes */}
+                {formData.sizes.length === 0 && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="price">Price (LKR) *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={formData.price}
+                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                )}
                 
-                <div className="grid gap-2">
+                <div className={`grid gap-2 ${formData.sizes.length === 0 ? '' : 'col-span-2'}`}>
                   <Label htmlFor="category">Category</Label>
                   <Select 
                     value={formData.categoryId !== null ? String(formData.categoryId) : undefined}
@@ -339,6 +557,66 @@ const AdminProducts = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              
+              {/* Sizes Input with Pricing */}
+              <div className="grid gap-2">
+                <Label>Available Sizes {formData.sizes.length > 0 ? '*' : '(Optional)'}</Label>
+                <div className="grid grid-cols-12 gap-2">
+                  <Input
+                    className="col-span-6"
+                    value={newSize}
+                    onChange={(e) => setNewSize(e.target.value)}
+                    placeholder="e.g., Small, Medium, Large"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddSize();
+                      }
+                    }}
+                  />
+                  <Input
+                    className="col-span-5"
+                    type="number"
+                    step="0.01"
+                    value={newSizePrice}
+                    onChange={(e) => setNewSizePrice(e.target.value)}
+                    placeholder="Price (LKR)"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddSize();
+                      }
+                    }}
+                  />
+                  <Button type="button" onClick={handleAddSize} variant="outline" className="col-span-1">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {formData.sizes.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Suggested: Small, Medium, Large • Leave empty for single-priced products
+                  </p>
+                )}
+                {formData.sizes.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.sizes.map((size, index) => (
+                      <Badge key={index} variant="secondary" className="pl-3 pr-1 py-1.5 flex items-center gap-2">
+                        <span className="font-medium">{size}</span>
+                        <span className="text-xs opacity-75">LKR {sizePrices[size] || '0'}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-4 w-4 ml-1 hover:bg-transparent"
+                          onClick={() => handleRemoveSize(size)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center space-x-6">
@@ -393,7 +671,7 @@ const AdminProducts = () => {
               {products.map((product) => (
                 <div key={product.id} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
                   <img
-                    src={product.image}
+                    src={getImageUrl(product.image)}
                     alt={product.name}
                     className="w-16 h-16 object-cover rounded-lg"
                   />
@@ -426,10 +704,15 @@ const AdminProducts = () => {
                       <Switch
                         checked={product.availability}
                         onCheckedChange={() => toggleAvailability(product.id)}
+                        disabled={togglingAvailability === product.id}
                       />
-                      <span className="text-xs text-gray-700">
-                        {product.availability ? "Available" : "Unavailable"}
-                      </span>
+                      {togglingAvailability === product.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
+                      ) : (
+                        <span className="text-xs text-gray-700">
+                          {product.availability ? "Available" : "Unavailable"}
+                        </span>
+                      )}
                     </div>
                   </div>
                   
@@ -558,6 +841,13 @@ const AdminProducts = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Category Management Dialog */}
+      <CategoryManagementDialog 
+        open={isCategoryDialogOpen}
+        onOpenChange={setIsCategoryDialogOpen}
+        onCategoryChanged={loadCategories}
+      />
     </div>
   );
 };

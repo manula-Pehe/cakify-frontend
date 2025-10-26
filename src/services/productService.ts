@@ -5,12 +5,13 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number;
+  price: number; // Base price (for backward compatibility)
   image: string;
   category: string; // Display name (may be deprecated in favor of categoryName)
   categoryId?: number; // Backend ID for category
   categoryName?: string; // Optional explicit name if provided by backend
   sizes: string[];
+  sizePrices?: { [size: string]: number }; // Size-specific pricing
   availability: boolean;
   featured: boolean;
 }
@@ -22,6 +23,7 @@ export interface ProductRequest {
   price: number;
   categoryId: number | null;
   sizes: string[];
+  sizePrices?: { [size: string]: number }; // Size-specific pricing
   availability: boolean;
   featured: boolean;
   imageUrl?: string;
@@ -78,6 +80,18 @@ export const productService = {
   search: async (query: string): Promise<Product[]> => {
     return apiClient.get(`/products/search`, {
       params: { q: query }
+    });
+  },
+
+  // Upload product image
+  uploadImage: async (id: string, imageFile: File): Promise<Product> => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    return apiClient.post(`/products/${id}/upload-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
   },
 };
