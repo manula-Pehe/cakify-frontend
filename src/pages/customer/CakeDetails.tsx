@@ -1,17 +1,86 @@
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cakes } from "@/data/mockData";
-import { ArrowLeft, ShoppingCart, Heart, Share2, Star } from "lucide-react";
+import { ArrowLeft, ShoppingCart, ShoppingBag, Heart, Share2, Star, Loader2, MessageSquarePlus } from "lucide-react";
+import { productService, Product } from "@/services/productService";
+import { categoryService } from "@/services/categoryService";
+import { reviewService, Review } from "@/services/reviewService";
+import { useToast } from "@/hooks/use-toast";
+import ReviewDialog from "@/components/customer/ReviewDialog";
 
 const CakeDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [cake, setCake] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [relatedCakes, setRelatedCakes] = useState<Product[]>([]);
+  const [cakeReviews, setCakeReviews] = useState<Review[]>([]);
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+
+  useEffect(() => {
+    loadCakeDetails();
+  }, [id]);
+
+  const loadCakeDetails = async () => {
+    if (!id) return;
+    
+    try {
+      setIsLoading(true);
+      const [productData, categories] = await Promise.all([
+        productService.getById(id),
+        categoryService.getAll()
+      ]);
+      
+      // Map category name to product
+      const category = categories.find(cat => cat.id === (productData as any).categoryId);
+      const productWithCategory = {
+        ...productData,
+        category: category?.name || 'Uncategorized'
+      };
+      
+      setCake(productWithCategory);
+      
+      // Get reviews for this product
+      const productReviews = await reviewService.getByProduct(id);
+      setCakeReviews(productReviews);
+      
+      // Load related products from the same category
+      const allProducts = await productService.getAvailable();
+      const related = allProducts
+        .filter(p => p.id !== id && (p as any).categoryId === (productData as any).categoryId)
+        .slice(0, 3)
+        .map(product => {
+          const cat = categories.find(c => c.id === (product as any).categoryId);
+          return { ...product, category: cat?.name || 'Uncategorized' };
+        });
+      setRelatedCakes(related);
+    } catch (error) {
+      toast({
+        title: "Error Loading Cake Details",
+        description: error instanceof Error ? error.message : "Failed to load cake details",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
-  const cake = cakes.find(c => c.id === id);
+  const averageRating = cakeReviews.length > 0
+    ? (cakeReviews.reduce((acc, r) => acc + r.rating, 0) / cakeReviews.length).toFixed(1)
+    : "0";
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!cake) {
     return (
@@ -28,11 +97,29 @@ const CakeDetails = () => {
 
   const handleOrderNow = () => {
     if (!selectedSize) {
-      alert("Please select a size before ordering");
+      toast({
+        title: "Size Required",
+        description: "Please select a size before ordering.",
+        variant: "destructive",
+      });
       return;
     }
-    // Redirect to order form with cake and size pre-selected
-    window.location.href = `/order?cake=${cake.id}&size=${selectedSize}`;
+    navigate(`/order?cake=${cake.id}&size=${selectedSize}`);
+  };
+
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      toast({
+        title: "Size Required",
+        description: "Please select a size before adding to cart.",
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: "Added to cart",
+      description: `${cake.name} (${selectedSize}) has been added to your cart.`,
+    });
   };
 
   return (
@@ -79,9 +166,18 @@ const CakeDetails = () => {
                 <Badge variant="outline">{cake.category}</Badge>
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                    <Star 
+                      key={i} 
+                      className={`h-4 w-4 ${
+                        i < Math.round(parseFloat(averageRating)) 
+                          ? 'text-yellow-400 fill-current' 
+                          : 'text-gray-300'
+                      }`} 
+                    />
                   ))}
-                  <span className="text-sm text-muted-foreground ml-1">(4.9)</span>
+                  <span className="text-sm text-muted-foreground ml-1">
+                    ({averageRating} · {cakeReviews.length} reviews)
+                  </span>
                 </div>
               </div>
               <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
@@ -104,7 +200,7 @@ const CakeDetails = () => {
                   <SelectContent>
                     {cake.sizes.map((size) => (
                       <SelectItem key={size} value={size}>
-                        {size} - ${cake.price + (size.includes("10") ? 10 : size.includes("12") ? 25 : 0)}
+                        {size} - LKR {(cake.price + (size.includes("10") ? 1000 : size.includes("12") ? 2500 : 0)).toLocaleString()}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -113,7 +209,7 @@ const CakeDetails = () => {
 
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-secondary">
-                  ${cake.price}
+                  LKR {cake.price.toLocaleString()}
                 </span>
                 <span className="text-sm text-muted-foreground">
                   Starting price (6 inch)
@@ -135,6 +231,16 @@ const CakeDetails = () => {
               </Button>
               
               <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="flex-1"
+                  onClick={handleAddToCart}
+                  disabled={!cake.availability}
+                >
+                  <ShoppingBag className="h-5 w-5 mr-2" />
+                  Add to Cart
+                </Button>
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -190,16 +296,119 @@ const CakeDetails = () => {
           </div>
         </div>
 
+        {/* Customer Reviews */}
+        <div className="mt-16">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-foreground">
+              Customer Reviews
+            </h3>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setIsReviewDialogOpen(true)}
+              className="gap-2"
+            >
+              <MessageSquarePlus className="h-5 w-5" />
+              Write a Review
+            </Button>
+          </div>
+          
+          {cakeReviews.length > 0 ? (
+            <div className="space-y-6">
+              {/* Review Summary */}
+              <div className="glass-card p-6">
+                <div className="flex items-center gap-8">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-foreground mb-2">
+                      {averageRating}
+                    </div>
+                    <div className="flex items-center gap-1 mb-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={`h-5 w-5 ${
+                            i < Math.round(parseFloat(averageRating)) 
+                              ? 'text-yellow-400 fill-current' 
+                              : 'text-gray-300'
+                          }`} 
+                        />
+                      ))}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {cakeReviews.length} reviews
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1 space-y-2">
+                    {[5, 4, 3, 2, 1].map((rating) => {
+                      const count = cakeReviews.filter(r => r.rating === rating).length;
+                      const percentage = (count / cakeReviews.length) * 100;
+                      return (
+                        <div key={rating} className="flex items-center gap-3">
+                          <span className="text-sm w-12">{rating} stars</span>
+                          <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-yellow-400 transition-all duration-300" 
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-sm text-muted-foreground w-12 text-right">
+                            {count}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Individual Reviews */}
+              <div className="space-y-4">
+                {cakeReviews.map((review) => (
+                  <div key={review.id} className="glass-card p-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h4 className="font-semibold text-foreground">{review.email}</h4>
+                        <div className="flex items-center gap-1 mt-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`h-4 w-4 ${
+                                i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                              }`} 
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground">{review.comment}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="glass-card p-12 text-center">
+              <Star className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-foreground mb-2">
+                No Reviews Yet
+              </h4>
+              <p className="text-muted-foreground">
+                Be the first to review this delicious cake!
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Related Cakes */}
         <div className="mt-16">
           <h3 className="text-2xl font-bold text-foreground mb-8">
             You Might Also Like
           </h3>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cakes
-              .filter(c => c.id !== cake.id && c.category === cake.category)
-              .slice(0, 3)
-              .map(relatedCake => (
+            {relatedCakes.map(relatedCake => (
                 <div key={relatedCake.id} className="cake-card">
                   <Link to={`/cakes/${relatedCake.id}`}>
                     <img
@@ -209,7 +418,7 @@ const CakeDetails = () => {
                     />
                     <h4 className="font-semibold text-foreground">{relatedCake.name}</h4>
                     <p className="text-sm text-muted-foreground mt-1">
-                      ${relatedCake.price}
+                      LKR {relatedCake.price.toLocaleString()}
                     </p>
                   </Link>
                 </div>
@@ -217,6 +426,17 @@ const CakeDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Review Dialog */}
+      {cake && (
+        <ReviewDialog
+          open={isReviewDialogOpen}
+          onOpenChange={setIsReviewDialogOpen}
+          productId={cake.id}
+          productName={cake.name}
+          onReviewSubmitted={loadCakeDetails}
+        />
+      )}
     </div>
   );
 };

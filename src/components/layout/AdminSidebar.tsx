@@ -6,17 +6,46 @@ import {
   MessageSquare, 
   BarChart3, 
   LogOut,
-  Cake
+  Cake,
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
+import { reviewService } from "@/services/reviewService";
+import { productService } from "@/services/productService";
 
 const AdminSidebar = () => {
   const location = useLocation();
+  const [pendingReviewsCount, setPendingReviewsCount] = useState(0);
+
+  useEffect(() => {
+    loadPendingReviewsCount();
+    // Refresh count every 30 seconds
+    const interval = setInterval(loadPendingReviewsCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadPendingReviewsCount = async () => {
+    try {
+      const products = await productService.getAll();
+      const allReviewsPromises = products.map((product) =>
+        reviewService.getAllByProduct(product.id)
+      );
+      const reviewsArrays = await Promise.all(allReviewsPromises);
+      const allReviews = reviewsArrays.flat();
+      const pending = allReviews.filter((r) => !r.approved).length;
+      setPendingReviewsCount(pending);
+    } catch (error) {
+      console.error("Failed to load pending reviews count:", error);
+    }
+  };
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
     { icon: Package, label: "Products", path: "/admin/products" },
     { icon: ShoppingBag, label: "Orders", path: "/admin/orders" },
+    { icon: Star, label: "Reviews", path: "/admin/reviews", badge: pendingReviewsCount },
     { icon: MessageSquare, label: "Inquiries", path: "/admin/inquiries" },
     { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
   ];
@@ -41,14 +70,21 @@ const AdminSidebar = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${
+              className={`flex items-center justify-between space-x-3 px-4 py-3 rounded-xl transition-colors ${
                 isActive(item.path)
                   ? "bg-white/20 text-white"
                   : "text-white/70 hover:bg-white/10 hover:text-white"
               }`}
             >
-              <Icon className="h-5 w-5" />
-              <span className="font-medium">{item.label}</span>
+              <div className="flex items-center space-x-3">
+                <Icon className="h-5 w-5" />
+                <span className="font-medium">{item.label}</span>
+              </div>
+              {item.badge !== undefined && item.badge > 0 && (
+                <Badge className="bg-red-500 text-white hover:bg-red-600">
+                  {item.badge}
+                </Badge>
+              )}
             </Link>
           );
         })}
