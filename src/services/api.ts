@@ -58,6 +58,14 @@ export const apiClient = {
     const res = await instance.put<T, T>(url, data, config);
     return res;
   },
+  patch: async <T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T> => {
+    const res = await instance.patch<T, T>(url, data, config);
+    return res;
+  },
   delete: async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
     const res = await instance.delete<T, T>(url, config);
     return res;

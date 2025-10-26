@@ -22,6 +22,7 @@ const AdminProducts = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [togglingAvailability, setTogglingAvailability] = useState<string | null>(null); // Track which product is being toggled
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -223,21 +224,35 @@ const AdminProducts = () => {
     }
   };
 
+  // ✅ OPTIMIZED: Update local state instead of reloading all products
   const toggleAvailability = async (productId: string) => {
     try {
-      await productService.toggleAvailability(productId);
-      // Reload products from server
-      await loadProducts();
+      setTogglingAvailability(productId);
+      
+      // Call backend to toggle availability
+      const updatedProduct = await productService.toggleAvailability(productId);
+      
+      // Update local state with the new product data
+      setProducts(products.map(p => 
+        p.id === productId ? { ...p, availability: updatedProduct.availability } : p
+      ));
+      
       toast({
         title: "Availability Updated",
-        description: "Product availability has been toggled.",
+        description: `Product is now ${updatedProduct.availability ? 'available' : 'unavailable'}.`,
       });
     } catch (error) {
+      console.error("Toggle availability error:", error);
       toast({
         title: "Error Updating Availability",
         description: error instanceof Error ? error.message : "Failed to update availability",
         variant: "destructive",
       });
+      
+      // Reload products on error to ensure UI is in sync
+      await loadProducts();
+    } finally {
+      setTogglingAvailability(null);
     }
   };
 
@@ -426,10 +441,15 @@ const AdminProducts = () => {
                       <Switch
                         checked={product.availability}
                         onCheckedChange={() => toggleAvailability(product.id)}
+                        disabled={togglingAvailability === product.id}
                       />
-                      <span className="text-xs text-gray-700">
-                        {product.availability ? "Available" : "Unavailable"}
-                      </span>
+                      {togglingAvailability === product.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
+                      ) : (
+                        <span className="text-xs text-gray-700">
+                          {product.availability ? "Available" : "Unavailable"}
+                        </span>
+                      )}
                     </div>
                   </div>
                   
