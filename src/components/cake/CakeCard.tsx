@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { Cake } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, ShoppingCart } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
+import { getImageUrl } from "@/services/api";
 
 interface CakeCardProps {
   cake: Cake;
@@ -10,15 +11,15 @@ interface CakeCardProps {
 
 const CakeCard = ({ cake }: CakeCardProps) => {
   return (
-    <div className="cake-card">
-      <div className="relative mb-4">
+    <div className="cake-card group">
+      <div className="relative mb-4 overflow-hidden rounded-xl">
         <img
-          src={cake.image}
+          src={getImageUrl(cake.image)}
           alt={cake.name}
-          className="w-full h-48 object-cover rounded-xl"
+          className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
         />
         {cake.featured && (
-          <Badge className="absolute top-3 left-3 bg-secondary text-white">
+          <Badge className="absolute top-3 left-3 bg-secondary text-white shadow-md">
             Featured
           </Badge>
         )}
@@ -31,41 +32,43 @@ const CakeCard = ({ cake }: CakeCardProps) => {
       
       <div className="space-y-3">
         <div>
-          <h3 className="font-semibold text-lg text-foreground">{cake.name}</h3>
-          <p className="text-muted-foreground text-sm line-clamp-2">
+          <Link to={`/cakes/${cake.id}`}>
+            <h3 className="font-bold text-lg text-foreground hover:text-secondary transition-colors cursor-pointer line-clamp-1">
+              {cake.name}
+            </h3>
+          </Link>
+          <p className="text-muted-foreground text-sm line-clamp-2 mt-1">
             {cake.description}
           </p>
         </div>
         
-        <div className="flex items-center justify-between">
-          <Badge variant="outline" className="text-xs">
+        <div className="flex items-center justify-between pt-2">
+          <Badge variant="outline" className="text-xs font-normal px-2.5 py-0.5">
             {cake.category}
           </Badge>
-          <span className="font-bold text-lg text-secondary">
-            ${cake.price}
+          <span className="font-bold text-xl text-foreground">
+            LKR {cake.price.toLocaleString()}
           </span>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-2">
           <Button
-            asChild
-            variant="outline"
+            variant="default"
             size="sm"
-            className="flex-1"
-          >
-            <Link to={`/cakes/${cake.id}`}>
-              <Eye className="h-4 w-4 mr-2" />
-              View Details
-            </Link>
-          </Button>
-          <Button
-            variant="cake"
-            size="sm"
-            className="flex-1"
+            className="flex-1 bg-secondary hover:bg-secondary/90 text-white"
             disabled={!cake.availability}
           >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Order Now
+            <ShoppingCart className="h-4 w-4 mr-1" />
+            Order ...
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 border-secondary/20 hover:bg-secondary/5"
+            disabled={!cake.availability}
+          >
+            <ShoppingCart className="h-4 w-4 mr-1" />
+            Add to ...
           </Button>
         </div>
       </div>
