@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,18 +8,26 @@ import { Loader2, Plus, Edit, Trash2, Tags } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { categoryService, Category } from "@/services/categoryService";
 
-const AdminCategories = () => {
+interface CategoryManagementDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCategoryChanged?: () => void;
+}
+
+const CategoryManagementDialog = ({ open, onOpenChange, onCategoryChanged }: CategoryManagementDialogProps) => {
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<{ name: string }>({ name: "" });
 
   useEffect(() => {
-    loadCategories();
-  }, []);
+    if (open) {
+      loadCategories();
+    }
+  }, [open]);
 
   const loadCategories = async () => {
     try {
@@ -45,13 +52,13 @@ const AdminCategories = () => {
 
   const handleOpenCreate = () => {
     resetForm();
-    setIsDialogOpen(true);
+    setIsEditDialogOpen(true);
   };
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setFormData({ name: category.name });
-    setIsDialogOpen(true);
+    setIsEditDialogOpen(true);
   };
 
   const handleSave = async () => {
@@ -74,7 +81,8 @@ const AdminCategories = () => {
         toast({ title: "Category Created" });
       }
       await loadCategories();
-      setIsDialogOpen(false);
+      onCategoryChanged?.();
+      setIsEditDialogOpen(false);
       resetForm();
     } catch (error) {
       toast({
@@ -92,8 +100,8 @@ const AdminCategories = () => {
       await categoryService.delete(id);
       toast({ title: "Category Deleted" });
       await loadCategories();
+      onCategoryChanged?.();
     } catch (error) {
-      // Check if it's a foreign key constraint error
       const errorMessage = error instanceof Error ? error.message : "Failed to delete category";
       const isForeignKeyError = errorMessage.includes("foreign key") || 
                                  errorMessage.includes("constraint") || 
@@ -109,50 +117,43 @@ const AdminCategories = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Category Management</h1>
-          <p className="text-gray-700">Manage your product categories</p>
-        </div>
-        <Button className="bg-white text-secondary hover:bg-white/90" onClick={handleOpenCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Category
-        </Button>
-      </div>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px] max-h-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Tags className="h-5 w-5" />
+              Manage Categories
+            </DialogTitle>
+            <DialogDescription>
+              Create, edit, or remove product categories
+            </DialogDescription>
+          </DialogHeader>
 
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="text-gray-900 flex items-center gap-2">
-            <Tags className="h-5 w-5" />
-            All Categories ({categories.length})
-          </CardTitle>
-          <CardDescription className="text-gray-600">
-            Create, edit, or remove categories
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {categories.length > 0 ? (
-            <div className="space-y-3">
+          <div className="flex justify-end mb-2">
+            <Button size="sm" onClick={handleOpenCreate}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Category
+            </Button>
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+          ) : categories.length > 0 ? (
+            <div className="space-y-2 max-h-[350px] overflow-y-auto pr-2">
               {categories.map((cat) => (
-                <div key={cat.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                <div key={cat.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="font-medium text-gray-900">{cat.name}</div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" className="text-gray-700 hover:text-gray-900" onClick={() => handleEdit(cat)}>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(cat)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-gray-700 hover:text-red-600">
+                        <Button variant="ghost" size="sm" className="hover:text-red-600">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
@@ -178,21 +179,22 @@ const AdminCategories = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <Tags className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No categories yet</h3>
-              <p className="text-gray-600 mb-4">Add your first category to organize products.</p>
-              <Button className="bg-white text-secondary hover:bg-white/90" onClick={handleOpenCreate}>
+            <div className="text-center py-8">
+              <Tags className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No categories yet</h3>
+              <p className="text-gray-600 text-sm mb-4">Add your first category to organize products.</p>
+              <Button size="sm" onClick={handleOpenCreate}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Your First Category
+                Add Category
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[420px]">
+      {/* Edit/Create Category Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>{editingCategory ? "Edit Category" : "Add Category"}</DialogTitle>
             <DialogDescription>
@@ -207,24 +209,30 @@ const AdminCategories = () => {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ name: e.target.value })}
-                placeholder="e.g., Birthday"
+                placeholder="e.g., Birthday, Wedding, Anniversary"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSave();
+                  }
+                }}
               />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>Cancel</Button>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isSaving}>
+              Cancel
+            </Button>
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {editingCategory ? "Update" : "Create"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };
 
-export default AdminCategories;
-
-
+export default CategoryManagementDialog;

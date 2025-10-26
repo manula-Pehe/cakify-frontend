@@ -37,9 +37,9 @@ const Home = () => {
             <div className="relative">
               <div className="glass-card p-8 transform rotate-2">
                 <img
-                  src="/api/placeholder/500/600"
+                  src="/images/hero-cake.png"
                   alt="Beautiful handcrafted cake"
-                  className="w-full rounded-xl shadow-lg"
+                  className="w-full rounded-xl shadow-lg object-cover"
                 />
               </div>
             </div>
