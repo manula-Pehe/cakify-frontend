@@ -8,13 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Package, Loader2, MessageSquare, Star, Upload, X } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Loader2, MessageSquare, Star, Upload, X, Tags } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { productService, Product } from "@/services/productService";
 import { categoryService, Category } from "@/services/categoryService";
 import { Link } from "react-router-dom";
 import { reviewService, Review, ReviewStats } from "@/services/reviewService";
 import { getImageUrl } from "@/services/api";
+import CategoryManagementDialog from "@/components/admin/CategoryManagementDialog";
 
 const AdminProducts = () => {
   const { toast } = useToast();
@@ -23,6 +24,7 @@ const AdminProducts = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [togglingAvailability, setTogglingAvailability] = useState<string | null>(null); // Track which product is being toggled
   const [formData, setFormData] = useState({
     name: "",
@@ -423,11 +425,14 @@ const AdminProducts = () => {
           <p className="text-gray-700">Manage your cake catalog and inventory</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/admin/categories">
-            <Button className="bg-red-500 text-white hover:bg-red-500/90">
-              Categories
-            </Button>
-          </Link>
+          <Button 
+            variant="outline"
+            onClick={() => setIsCategoryDialogOpen(true)}
+            className="gap-2"
+          >
+            <Tags className="h-4 w-4" />
+            Manage Categories
+          </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
@@ -830,6 +835,13 @@ const AdminProducts = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Category Management Dialog */}
+      <CategoryManagementDialog 
+        open={isCategoryDialogOpen}
+        onOpenChange={setIsCategoryDialogOpen}
+        onCategoryChanged={loadCategories}
+      />
     </div>
   );
 };
