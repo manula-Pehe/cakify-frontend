@@ -1,53 +1,41 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Users, Award, Clock, Cake, Star } from "lucide-react";
+import { Heart, Users, Award, Clock, Cake, Star, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const About = () => {
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Hero Section */}
         <div className="text-center mb-16">
           <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">
-            About Sweet Delights
+            About Cakify
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            We're a passionate family-owned bakery dedicated to creating beautiful, 
+            We're a passionate home-based bakery dedicated to creating beautiful, 
             delicious cakes that make your special moments even more memorable.
           </p>
         </div>
 
         {/* Story Section */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-foreground">Our Story</h2>
-            <div className="space-y-4 text-muted-foreground leading-relaxed">
-              <p>
-                Sweet Delights began in 2018 when our founder, Sarah Martinez, decided to turn 
-                her passion for baking into a business. What started as making cakes for friends 
-                and family quickly grew into a beloved neighborhood bakery.
-              </p>
-              <p>
-                With over 15 years of professional baking experience and a degree from culinary 
-                school, Sarah brings both expertise and creativity to every cake we make. We believe 
-                that every celebration deserves a cake as special as the occasion itself.
-              </p>
-              <p>
-                Today, we're proud to be the go-to cake destination for birthdays, weddings, 
-                and special events throughout our community. Each cake is handcrafted with love, 
-                using only the finest ingredients.
-              </p>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="glass-card p-8">
-              <img
-                src="/api/placeholder/500/600"
-                alt="Sarah Martinez, founder of Sweet Delights"
-                className="w-full rounded-xl shadow-lg"
-              />
-            </div>
+        <div className="max-w-4xl mx-auto text-center mb-20">
+          <h2 className="text-3xl font-bold text-foreground mb-8">Our Story</h2>
+          <div className="space-y-6 text-muted-foreground leading-relaxed">
+            <p className="text-lg">
+              Cakify began when Mrs. Thushani Pigera decided to turn her passion for baking
+              into a home-based business. What started as making cakes for friends and family
+              in Kadawatha, Sri Lanka, quickly grew into a beloved local cake destination.
+            </p>
+            <p className="text-lg">
+              With years of experience in creating beautiful and delicious cakes, Mrs. Pigera
+              brings both expertise and creativity to every cake she makes. She believes that
+              every celebration deserves a cake as special as the occasion itself.
+            </p>
+            <p className="text-lg">
+              Today, Cakify is proud to be the go-to cake destination for birthdays, weddings,
+              and special events throughout Kadawatha and surrounding areas. Each cake is
+              handcrafted with love, using only the finest ingredients available in Sri Lanka.
+            </p>
           </div>
         </div>
 
@@ -115,45 +103,39 @@ const About = () => {
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="cake-card text-center">
               <CardContent className="pt-6">
-                <img
-                  src="/api/placeholder/200/200"
-                  alt="Sarah Martinez"
-                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-                />
-                <h3 className="text-xl font-semibold text-foreground mb-1">Sarah Martinez</h3>
-                <p className="text-secondary font-medium mb-2">Founder & Head Baker</p>
+                <div className="bg-primary/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Cake className="h-12 w-12 text-secondary" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-1">Mrs. Thushani Pigera</h3>
+                <p className="text-secondary font-medium mb-2">Founder & Master Baker</p>
                 <p className="text-muted-foreground text-sm">
-                  15+ years of baking expertise with a passion for creating edible masterpieces.
+                  Passionate home-based baker specializing in creating memorable cakes for Sri Lankan celebrations.
                 </p>
               </CardContent>
             </Card>
 
             <Card className="cake-card text-center">
               <CardContent className="pt-6">
-                <img
-                  src="/api/placeholder/200/200"
-                  alt="Maria Lopez"
-                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-                />
-                <h3 className="text-xl font-semibold text-foreground mb-1">Maria Lopez</h3>
-                <p className="text-secondary font-medium mb-2">Decorator & Designer</p>
+                <div className="bg-primary/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Heart className="h-12 w-12 text-secondary" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-1">Custom Orders</h3>
+                <p className="text-secondary font-medium mb-2">Personalized Creations</p>
                 <p className="text-muted-foreground text-sm">
-                  Creative artist specializing in custom decorations and themed cake designs.
+                  Specializing in custom cakes for weddings, birthdays, and all Sri Lankan cultural celebrations.
                 </p>
               </CardContent>
             </Card>
 
             <Card className="cake-card text-center">
               <CardContent className="pt-6">
-                <img
-                  src="/api/placeholder/200/200"
-                  alt="James Wilson"
-                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-                />
-                <h3 className="text-xl font-semibold text-foreground mb-1">James Wilson</h3>
-                <p className="text-secondary font-medium mb-2">Customer Relations</p>
+                <div className="bg-primary/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="h-12 w-12 text-secondary" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-1">Kadawatha, Sri Lanka</h3>
+                <p className="text-secondary font-medium mb-2">Home-Based Service</p>
                 <p className="text-muted-foreground text-sm">
-                  Dedicated to ensuring every customer has an exceptional experience with us.
+                  Convenient home-based cake service serving Kadawatha and surrounding areas in Sri Lanka.
                 </p>
               </CardContent>
             </Card>
@@ -167,15 +149,15 @@ const About = () => {
           </h2>
           <div className="grid md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold text-secondary mb-2">500+</div>
+              <div className="text-4xl font-bold text-secondary mb-2">200+</div>
               <div className="text-muted-foreground">Happy Customers</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-secondary mb-2">1,200+</div>
+              <div className="text-4xl font-bold text-secondary mb-2">500+</div>
               <div className="text-muted-foreground">Cakes Created</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-secondary mb-2">5</div>
+              <div className="text-4xl font-bold text-secondary mb-2">3</div>
               <div className="text-muted-foreground">Years in Business</div>
             </div>
             <div>

@@ -50,10 +50,9 @@ const Contact = () => {
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Contact Sweet Delights
+            Contact Cakify
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Have questions about our cakes or need a custom order? We'd love to hear from you!
@@ -140,21 +139,21 @@ const Contact = () => {
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">How far in advance should I order?</h4>
                   <p className="text-muted-foreground text-sm">
-                    We recommend ordering at least 3 days in advance for custom cakes. For wedding cakes or large orders, please contact us 2-3 weeks ahead.
+                    We recommend ordering at least 2-3 days in advance for custom cakes. For wedding cakes or large orders, please contact us 1-2 weeks ahead.
                   </p>
                 </div>
                 
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">Do you offer delivery?</h4>
                   <p className="text-muted-foreground text-sm">
-                    Yes! We deliver within a 15-mile radius of our bakery. Delivery fees vary based on distance and cake size.
+                    Yes! We deliver within Kadawatha and nearby areas. Delivery fees vary based on distance and cake size. Free delivery for orders over LKR 15,000.
                   </p>
                 </div>
                 
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">Can you accommodate dietary restrictions?</h4>
                   <p className="text-muted-foreground text-sm">
-                    Absolutely! We offer gluten-free, dairy-free, and sugar-free options. Please mention any dietary requirements when ordering.
+                    Absolutely! We offer egg-free, dairy-free, and sugar-free options. We can also accommodate gluten-free requirements. Please mention any dietary needs when ordering.
                   </p>
                 </div>
                 
@@ -181,8 +180,18 @@ const Contact = () => {
                     <Phone className="h-4 w-4 text-secondary" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">(555) 123-4567</p>
-                    <p className="text-sm text-muted-foreground">Call for immediate assistance</p>
+                    <p className="font-medium text-foreground">+94 71 234 5678</p>
+                    <p className="text-sm text-muted-foreground">Call for orders & inquiries</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <Phone className="h-4 w-4 text-secondary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">+94 11 234 5678</p>
+                    <p className="text-sm text-muted-foreground">WhatsApp preferred</p>
                   </div>
                 </div>
                 
@@ -191,7 +200,7 @@ const Contact = () => {
                     <Mail className="h-4 w-4 text-secondary" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">hello@sweetdelights.com</p>
+                    <p className="font-medium text-foreground">cakify.sl@gmail.com</p>
                     <p className="text-sm text-muted-foreground">Email us anytime</p>
                   </div>
                 </div>
@@ -201,8 +210,8 @@ const Contact = () => {
                     <MapPin className="h-4 w-4 text-secondary" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">123 Baker Street</p>
-                    <p className="text-sm text-muted-foreground">Springfield, ST 12345</p>
+                    <p className="font-medium text-foreground">Kadawatha, Sri Lanka</p>
+                    <p className="text-sm text-muted-foreground">Home-based cake service</p>
                   </div>
                 </div>
               </CardContent>
@@ -218,21 +227,17 @@ const Contact = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Monday - Friday</span>
-                  <span className="font-medium">8:00 AM - 6:00 PM</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Saturday</span>
-                  <span className="font-medium">9:00 AM - 5:00 PM</span>
+                  <span className="text-muted-foreground">Monday - Saturday</span>
+                  <span className="font-medium">8:00 AM - 8:00 PM</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Sunday</span>
-                  <span className="font-medium">Closed</span>
+                  <span className="font-medium">9:00 AM - 6:00 PM</span>
                 </div>
                 
                 <div className="bg-accent/20 p-3 rounded-lg mt-4">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Note:</strong> We're also available for cake pickups by appointment outside business hours.
+                    <strong>Note:</strong> Available for custom orders and consultations. Please call or WhatsApp for urgent orders.
                   </p>
                 </div>
               </CardContent>
@@ -248,7 +253,7 @@ const Contact = () => {
                   Need a cake urgently? We understand that special occasions sometimes come up unexpectedly.
                 </p>
                 <Button variant="brown" size="sm" className="w-full">
-                  Call (555) 123-RUSH
+                  Call +94 71 234 5678
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
                   Additional fees may apply for rush orders
