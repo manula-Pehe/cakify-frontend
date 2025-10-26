@@ -1,27 +1,29 @@
 // orders.ts - Order Service for Cakify Frontend
 
 export interface Order {
-  id?: number;
+  orderId?: number;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
   deliveryAddress: string;
   orderDate: string; // ISO string format
   deliveryDate: string; // ISO string format
-  status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'READY' | 'DELIVERED' | 'CANCELLED';
   totalAmount: number;
   specialNotes?: string;
   orderItems?: OrderItem[];
 }
 
 export interface OrderItem {
-  id?: number;
-  orderId?: number;
+  orderItemId?: number;         // matches backend primary key
+  orderId?: number;             // if your backend serializes the order reference as orderId
+  productId: number;
   productName: string;
+  productDescription?: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-  specialRequirements?: string;
+  specialInstructions?: string;
 }
 
 export interface CreateOrderRequest {
@@ -29,11 +31,9 @@ export interface CreateOrderRequest {
   customerEmail: string;
   customerPhone: string;
   deliveryAddress: string;
-  orderDate: string;
   deliveryDate: string;
-  status: string;
-  totalAmount: number;
   specialNotes?: string;
+  orderItems?: Omit<OrderItem, 'orderItemId'>[]; // if you want to create items
 }
 
 export interface OrdersResponse {
@@ -55,11 +55,10 @@ export interface ApiError {
 }
 
 class OrderService {
-  private baseUrl = 'http://localhost:8081/api'; // Your backend URL
-  
-  // Basic auth credentials (use the generated password from your Spring Boot logs)
+  private baseUrl = 'http://localhost:8081/api';
+
   private getAuthHeaders() {
-    const credentials = btoa('user:c36bc809-2097-4002-83f3-b294595b4f87'); // Replace with current password
+    const credentials = btoa('user:c36bc809-2097-4002-83f3-b294595b4f87');
     return {
       'Content-Type': 'application/json',
       'Authorization': `Basic ${credentials}`
@@ -69,7 +68,7 @@ class OrderService {
   // Get all orders with pagination
   async getAllOrders(page: number = 0, size: number = 10, sort: string = 'orderDate,desc'): Promise<OrdersResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/orders?page=${page}&size=${size}&sort=${sort}`, {
+      const response = await fetch(`${this.baseUrl}/orders/paginated?page=${page}&size=${size}&sort=${sort}`, {
         method: 'GET',
         headers: this.getAuthHeaders()
       });
