@@ -80,4 +80,16 @@ export const productService = {
       params: { q: query }
     });
   },
+
+  // Upload product image
+  uploadImage: async (id: string, imageFile: File): Promise<Product> => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    return apiClient.post(`/products/${id}/upload-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };

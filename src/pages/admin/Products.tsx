@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Package, Loader2, MessageSquare, Star } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Loader2, MessageSquare, Star, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { productService, Product } from "@/services/productService";
 import { categoryService, Category } from "@/services/categoryService";
@@ -39,6 +39,14 @@ const AdminProducts = () => {
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [selectedProductForReviews, setSelectedProductForReviews] = useState<Product | null>(null);
   const [deletingReviewId, setDeletingReviewId] = useState<number | null>(null);
+  
+  // Image upload state
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Size input state
+  const [newSize, setNewSize] = useState("");
 
   // Fetch products on component mount
   useEffect(() => {
@@ -131,6 +139,9 @@ const AdminProducts = () => {
       featured: false,
     });
     setEditingProduct(null);
+    setSelectedImage(null);
+    setImagePreview(null);
+    setNewSize("");
   };
 
   const handleEdit = (product: Product) => {
@@ -144,7 +155,65 @@ const AdminProducts = () => {
       availability: product.availability,
       featured: product.featured,
     });
+    setImagePreview(product.image);
+    setSelectedImage(null);
+    setNewSize("");
     setIsDialogOpen(true);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "File Too Large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAddSize = () => {
+    if (newSize.trim() && !formData.sizes.includes(newSize.trim())) {
+      setFormData({
+        ...formData,
+        sizes: [...formData.sizes, newSize.trim()]
+      });
+      setNewSize("");
+    }
+  };
+
+  const handleRemoveSize = (sizeToRemove: string) => {
+    setFormData({
+      ...formData,
+      sizes: formData.sizes.filter(size => size !== sizeToRemove)
+    });
   };
 
   const handleSave = async () => {
@@ -152,6 +221,15 @@ const AdminProducts = () => {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.sizes.length === 0) {
+      toast({
+        title: "Missing Sizes",
+        description: "Please add at least one size for the cake.",
         variant: "destructive",
       });
       return;
@@ -171,16 +249,30 @@ const AdminProducts = () => {
     try {
       setIsSaving(true);
       
+      let savedProduct;
+      
       if (editingProduct) {
         // Update existing product
-        await productService.update(editingProduct.id, productData);
+        savedProduct = await productService.update(editingProduct.id, productData);
+        
+        // Upload image if new one selected
+        if (selectedImage) {
+          await productService.uploadImage(editingProduct.id, selectedImage);
+        }
+        
         toast({
           title: "Product Updated",
           description: "Product has been successfully updated.",
         });
       } else {
         // Create new product
-        await productService.create(productData);
+        savedProduct = await productService.create(productData);
+        
+        // Upload image if selected
+        if (selectedImage && savedProduct) {
+          await productService.uploadImage(savedProduct.id, selectedImage);
+        }
+        
         toast({
           title: "Product Added",
           description: "New product has been added to the catalog.",
@@ -302,6 +394,45 @@ const AdminProducts = () => {
             </DialogHeader>
             
             <div className="grid gap-4 py-4">
+              {/* Image Upload */}
+              <div className="grid gap-2">
+                <Label>Product Image</Label>
+                {imagePreview ? (
+                  <div className="relative">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-full h-48 object-cover rounded-lg border"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={handleRemoveImage}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600 mb-1">Click to upload image</p>
+                    <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+              </div>
+              
               <div className="grid gap-2">
                 <Label htmlFor="name">Cake Name *</Label>
                 <Input
@@ -354,6 +485,45 @@ const AdminProducts = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              
+              {/* Sizes Input */}
+              <div className="grid gap-2">
+                <Label>Available Sizes *</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newSize}
+                    onChange={(e) => setNewSize(e.target.value)}
+                    placeholder="e.g., 6 inch, 8 inch, 10 inch"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddSize();
+                      }
+                    }}
+                  />
+                  <Button type="button" onClick={handleAddSize} variant="outline">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {formData.sizes.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.sizes.map((size, index) => (
+                      <Badge key={index} variant="secondary" className="pl-3 pr-1 py-1">
+                        {size}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-4 w-4 ml-2 hover:bg-transparent"
+                          onClick={() => handleRemoveSize(size)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center space-x-6">
