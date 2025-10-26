@@ -95,11 +95,11 @@ const AdminInquiries = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Customer Inquiries</h1>
-          <p className="text-white/80">Manage customer questions and support requests</p>
+          <h1 className="text-3xl font-bold text-black mb-2">Customer Inquiries</h1>
+          <p className="text-black/80">Manage customer questions and support requests</p>
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48 bg-white/10 border-white/20 text-white">
+          <SelectTrigger className="w-48 bg-black/10 border-black/20 text-black">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -120,10 +120,10 @@ const AdminInquiries = () => {
                 <MessageSquare className="h-5 w-5 text-blue-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-2xl font-bold text-black">
                   {inquiryList.filter(i => i.status === "new").length}
                 </p>
-                <p className="text-white/70 text-sm">New Inquiries</p>
+                <p className="text-black/70 text-sm">New Inquiries</p>
               </div>
             </div>
           </CardContent>
@@ -136,10 +136,10 @@ const AdminInquiries = () => {
                 <Reply className="h-5 w-5 text-green-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-2xl font-bold text-black">
                   {inquiryList.filter(i => i.status === "replied").length}
                 </p>
-                <p className="text-white/70 text-sm">Replied</p>
+                <p className="text-black/70 text-sm">Replied</p>
               </div>
             </div>
           </CardContent>
@@ -152,10 +152,10 @@ const AdminInquiries = () => {
                 <CheckCircle className="h-5 w-5 text-gray-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-2xl font-bold text-black">
                   {inquiryList.filter(i => i.status === "resolved").length}
                 </p>
-                <p className="text-white/70 text-sm">Resolved</p>
+                <p className="text-black/70 text-sm">Resolved</p>
               </div>
             </div>
           </CardContent>
@@ -165,11 +165,11 @@ const AdminInquiries = () => {
       {/* Inquiries List */}
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className="text-black flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
             Inquiries ({filteredInquiries.length})
           </CardTitle>
-          <CardDescription className="text-white/70">
+          <CardDescription className="text-black/70">
             Customer messages and support requests
           </CardDescription>
         </CardHeader>
@@ -177,17 +177,17 @@ const AdminInquiries = () => {
           {filteredInquiries.length > 0 ? (
             <div className="space-y-4">
               {filteredInquiries.map((inquiry) => (
-                <div key={inquiry.id} className="p-6 bg-white/5 rounded-xl border border-white/10">
+                <div key={inquiry.id} className="p-6 bg-black/5 rounded-xl border border-black/10">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div>
-                        <h3 className="font-semibold text-white text-lg">{inquiry.name}</h3>
+                        <h3 className="font-semibold text-black text-lg">{inquiry.name}</h3>
                         <div className="flex items-center gap-4 mt-1">
-                          <div className="flex items-center gap-1 text-white/70 text-sm">
+                          <div className="flex items-center gap-1 text-black/70 text-sm">
                             <Mail className="h-4 w-4" />
                             {inquiry.email}
                           </div>
-                          <div className="flex items-center gap-1 text-white/70 text-sm">
+                          <div className="flex items-center gap-1 text-black/70 text-sm">
                             <Calendar className="h-4 w-4" />
                             {formatDate(inquiry.date)}
                           </div>
@@ -200,7 +200,7 @@ const AdminInquiries = () => {
                   </div>
 
                   <div className="mb-4">
-                    <p className="text-white/90 leading-relaxed">{inquiry.message}</p>
+                    <p className="text-black/90 leading-relaxed">{inquiry.message}</p>
                   </div>
 
                   <div className="flex gap-2">
@@ -208,7 +208,7 @@ const AdminInquiries = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                        className="bg-black/10 border-black/20 text-black hover:bg-black/20"
                         onClick={() => handleReply(inquiry)}
                       >
                         <Reply className="h-4 w-4 mr-2" />
@@ -243,11 +243,11 @@ const AdminInquiries = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <MessageSquare className="h-12 w-12 text-white/50 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">
+              <MessageSquare className="h-12 w-12 text-black/50 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-black mb-2">
                 {statusFilter === "all" ? "No inquiries yet" : `No ${statusFilter} inquiries`}
               </h3>
-              <p className="text-white/70">
+              <p className="text-black/70">
                 {statusFilter === "all" 
                   ? "Customer inquiries will appear here when they contact you."
                   : `There are no ${statusFilter} inquiries at the moment.`
