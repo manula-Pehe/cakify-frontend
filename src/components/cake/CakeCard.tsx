@@ -44,7 +44,7 @@ const CakeCard = ({ cake }: CakeCardProps) => {
         
         <div className="flex items-center justify-between pt-2">
           <Badge variant="outline" className="text-xs font-normal px-2.5 py-0.5">
-            {cake.category}
+            {cake.categoryName || cake.category}
           </Badge>
           <span className="font-bold text-xl text-foreground">
             LKR {cake.price.toLocaleString()}
@@ -52,24 +52,27 @@ const CakeCard = ({ cake }: CakeCardProps) => {
         </div>
         
         <div className="flex gap-2 pt-2">
-          <Button
-            variant="default"
-            size="sm"
-            className="flex-1 bg-secondary hover:bg-secondary/90 text-white"
-            disabled={!cake.availability}
-          >
-            <ShoppingCart className="h-4 w-4 mr-1" />
-            Order ...
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 border-secondary/20 hover:bg-secondary/5"
-            disabled={!cake.availability}
-          >
-            <ShoppingCart className="h-4 w-4 mr-1" />
-            Add to ...
-          </Button>
+          <Link to={`/order?cake=${cake.id}`} className="flex-1">
+            <Button
+              variant="default"
+              size="sm"
+              className="w-full bg-secondary hover:bg-secondary/90 text-white"
+              disabled={!cake.availability}
+            >
+              <ShoppingCart className="h-4 w-4 mr-1" />
+              Order Now
+            </Button>
+          </Link>
+          <Link to={`/cakes/${cake.id}`} className="flex-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-secondary/20 hover:bg-secondary/5"
+              disabled={!cake.availability}
+            >
+              View Details
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

@@ -4,10 +4,14 @@ export interface Cake {
   description: string;
   price: number;
   image: string;
-  category: string;
+  category?: string; // For backward compatibility
+  categoryId?: number;
+  categoryName?: string;
   sizes: string[];
   availability: boolean;
   featured: boolean;
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 export interface Order {

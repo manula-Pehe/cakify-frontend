@@ -674,7 +674,7 @@ const AdminProducts = () => {
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-gray-900">{product.name}</h3>
                       <Badge variant="outline" className="text-xs">
-                        {product.category}
+                        {product.categoryName || product.category}
                       </Badge>
                       {product.featured && (
                         <Badge className="bg-yellow-100 text-yellow-800 text-xs">

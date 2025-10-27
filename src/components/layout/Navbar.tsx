@@ -45,10 +45,12 @@ const Navbar = () => {
                 {item.name}
               </Link>
             ))}
-            <Button variant="cake" size="sm" className="ml-4">
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Order Now
-            </Button>
+            <Link to="/order">
+              <Button variant="cake" size="sm" className="ml-4">
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Order Now
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -82,10 +84,12 @@ const Navbar = () => {
                 </Link>
               ))}
               <div className="px-3 py-2">
-                <Button variant="cake" size="sm" className="w-full">
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Order Now
-                </Button>
+                <Link to="/order" className="block">
+                  <Button variant="cake" size="sm" className="w-full">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Order Now
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
