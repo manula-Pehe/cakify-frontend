@@ -199,11 +199,20 @@ const CakeDetails = () => {
                     <SelectValue placeholder="Choose your preferred size" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cake.sizes.map((size) => (
-                      <SelectItem key={size} value={size}>
-                        {size}
-                      </SelectItem>
-                    ))}
+                    {cake.sizes && cake.sizes.length > 0 ? (
+                      cake.sizes.map((size) => (
+                        <SelectItem key={size} value={size}>
+                          {size}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="Small (6 inch)">Small (6 inch)</SelectItem>
+                        <SelectItem value="Medium (8 inch)">Medium (8 inch)</SelectItem>
+                        <SelectItem value="Large (10 inch)">Large (10 inch)</SelectItem>
+                        <SelectItem value="Extra Large (12 inch)">Extra Large (12 inch)</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
